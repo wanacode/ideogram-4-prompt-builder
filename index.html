@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ideogram 4 • JSON Prompt Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --primary: #3b82f6;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .font-display {
+            font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif;
+        }
+
+        .canvas-container {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            background: 
+                linear-gradient(45deg, #f8fafc 25%, transparent 25%) -1px -1px,
+                linear-gradient(-45deg, #f8fafc 25%, transparent 25%) -1px 1px,
+                linear-gradient(45deg, transparent 75%, #f8fafc 75%) 1px 1px,
+                linear-gradient(-45deg, transparent 75%, #f8fafc 75%) 1px -1px;
+            background-size: 20px 20px;
+            background-color: #f1e7d2;
+        }
+
+        .bbox {
+            position: absolute;
+            border: 2px solid #3b82f6;
+            background-color: rgba(59, 130, 246, 0.15);
+            box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.3);
+            transition: box-shadow 0.1s ease;
+            cursor: move;
+            user-select: none;
+            overflow: hidden;
+        }
+        
+        .bbox.text-type {
+            border-color: #10b981;
+            background-color: rgba(16, 185, 129, 0.15);
+            box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3);
+        }
+        
+        .bbox.selected {
+            border-width: 3px;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+            z-index: 20;
+            cursor: move;
+        }
+        
+        .bbox.text-type.selected {
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4);
+        }
+
+        .bbox-label {
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            font-size: 10px;
+            line-height: 1;
+            padding: 1px 4px;
+            background: rgba(255,255,255,0.9);
+            color: #1f2937;
+            font-weight: 600;
+            border-radius: 2px;
+            white-space: nowrap;
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            pointer-events: none;
+            box-shadow: 0 1px 2px rgb(0 0 0 / 0.1);
+        }
+
+        .bbox-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            z-index: 30;
+            display: none;
+        }
+
+        .bbox.selected .bbox-handle {
+            display: block;
+        }
+
+        .bbox-handle:hover {
+            background: #3b82f6;
+            border-color: white;
+        }
+
+        .json-output {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .aspect-btn {
+            transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .aspect-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .section-header {
+            font-size: 0.75rem;
+            letter-spacing: 0.025em;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .ideogram-box {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.4);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.12);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.25);
+        }
+
+        /* Responsive Layout Constraints */
+        @media (max-width: 1023px) {
+            body {
+                overflow: auto !important;
+                height: auto !important;
+            }
+            .main-workspace {
+                overflow: visible !important;
+                height: auto !important;
+            }
+            #canvas-wrapper {
+                height: 450px !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 h-screen flex flex-col overflow-hidden">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-3.5 border-b border-slate-850 shrink-0">
+        <div class="flex items-center gap-x-3">
+            <div class="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30">
+                <i class="fa-solid fa-magic text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-display text-xl font-semibold tracking-tight leading-none">Ideogram 4</h1>
+                <p class="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-semibold">Structured JSON Prompt Generator</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-x-2 text-sm">
+            <div class="px-3 py-1.5 bg-slate-900/80 border border-slate-800 rounded-lg text-slate-400 flex items-center gap-x-2 text-xs">
+                <i class="fa-solid fa-code text-blue-400"></i>
+                <span class="hidden sm:inline">Outputs native Ideogram 4 structured JSON</span>
+            </div>
+            <button onclick="showHelp()" 
+                    class="px-3 py-1.5 text-xs font-medium flex items-center gap-x-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg transition-all hover:text-white">
+                <i class="fa-solid fa-circle-question text-slate-400"></i>
+                <span>Help</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Workspace Area -->
+    <div class="main-workspace flex-1 flex flex-col lg:flex-row overflow-hidden w-full max-w-[1700px] mx-auto">
+        
+        <!-- LEFT: MAXIMIZED STATIC CANVAS VIEWPORT -->
+        <div id="canvas-wrapper" class="w-full lg:w-[58%] xl:w-[62%] h-full bg-slate-950 p-1 flex items-center justify-center overflow-hidden relative select-none">
+            <div id="canvas-container"
+                 class="canvas-container relative border border-slate-800 rounded-xl overflow-hidden shadow-2xl transition-all"
+                 style="cursor: crosshair;">
+                
+                <!-- Boxes layer -->
+                <div id="boxes-layer" class="absolute inset-0 z-10"></div>
+                
+                <!-- Fine backdrop centering guide -->
+                <div class="absolute inset-0 pointer-events-none" 
+                     style="background: radial-gradient(circle at center, transparent 40%, rgba(148, 163, 184, 0.04) 41%);"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT: SCROLLABLE CONTROL AND EDITING COLUMNS -->
+        <div id="right-panel" class="w-full lg:w-[42%] xl:w-[38%] border-t lg:border-t-0 lg:border-l border-slate-850 bg-slate-950/40 overflow-y-auto p-6 space-y-6">
+            
+            <!-- Card 1: Canvas Settings & Preset Scenes -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box space-y-5">
+                
+                <!-- Aspect Ratios -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="section-header">Canvas Aspect Ratio</div>
+                        <div id="current-aspect-display" class="text-xs font-mono bg-slate-950 px-2.5 py-0.5 rounded border border-slate-850 text-blue-400">
+                            16:9 • 1024×576
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-1.5 mb-3">
+                        <button onclick="setAspectRatio(1, 1)" class="aspect-btn px-2.5 py-1 text-xs font-medium border border-slate-800 hover:border-slate-600 rounded-lg bg-slate-950" data-aspect="1:1">1:1</button>
+                        <button onclick="setAspectRatio(4, 3)" class="aspect-btn px-2.5 py-1 text-xs font-medium border border-slate-800 hover:border-slate-600 rounded-lg bg-slate-950" data-aspect="4:3">4:3</button>
+                        <button onclick="setAspectRatio(3, 2)" class="aspect-btn px-2.5 py-1 text-xs font-medium border border-slate-800 hover:border-slate-600 rounded-lg bg-slate-950" data-aspect="3:2">3:2</button>
+                        <button onclick="setAspectRatio(16, 9)" class="aspect-btn px-2.5 py-1 text-xs font-medium border border-slate-800 hover:border-slate-600 rounded-lg bg-slate-950 active" data-aspect="16:9">16:9</button>
+                        <button onclick="setAspectRatio(9, 16)" class="aspect-btn px-2.5 py-1 text-xs font-medium border border-slate-800 hover:border-slate-600 rounded-lg bg-slate-950" data-aspect="9:16">9:16</button>
+                        <button onclick="setAspectRatio(2, 3)" class="aspect-btn px-2.5 py-1 text-xs font-medium border border-slate-800 hover:border-slate-600 rounded-lg bg-slate-950" data-aspect="2:3">2:3</button>
+                        <button onclick="setAspectRatio(3, 4)" class="aspect-btn px-2.5 py-1 text-xs font-medium border border-slate-800 hover:border-slate-600 rounded-lg bg-slate-950" data-aspect="3:4">3:4</button>
+                        <button onclick="setAspectRatio(21, 9)" class="aspect-btn px-2.5 py-1 text-xs font-medium border border-slate-800 hover:border-slate-600 rounded-lg bg-slate-950" data-aspect="21:9">21:9</button>
+                    </div>
+                    
+                    <!-- Custom Aspect Ratio Inputs -->
+                    <div class="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-850">
+                        <span class="text-xs text-slate-400 font-medium pl-1">Custom Proportion</span>
+                        <div class="flex items-center gap-x-1.5 font-mono">
+                            <input id="custom-w" type="number" value="16" class="w-12 bg-slate-900 border border-slate-800 text-xs rounded-lg px-2 py-1 text-center font-mono focus:outline-none focus:border-blue-500" onchange="updateCustomAspect()">
+                            <span class="text-slate-500">:</span>
+                            <input id="custom-h" type="number" value="9" class="w-12 bg-slate-900 border border-slate-800 text-xs rounded-lg px-2 py-1 text-center font-mono focus:outline-none focus:border-blue-500" onchange="updateCustomAspect()">
+                            <button onclick="applyCustomAspect()" 
+                                    class="text-xs px-2.5 py-1 bg-slate-850 hover:bg-slate-750 border border-slate-750 rounded-lg text-slate-300 ml-1 hover:text-white transition-colors">Apply</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scene Preset Examples -->
+                <div class="border-t border-slate-800/80 pt-4">
+                    <div class="section-header mb-3">Load Demo Presets</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="loadExample('poster')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                            <div class="w-7 h-7 bg-purple-900/30 rounded-lg flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-compact-disc text-purple-400 text-sm"></i>
+                            </div>
+                            <div class="leading-none">
+                                <div class="text-xs font-medium text-slate-200">Music Poster</div>
+                                <span class="text-[9px] text-slate-500 font-mono">1:1 Square</span>
+                            </div>
+                        </button>
+                        <button onclick="loadExample('scene')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                            <div class="w-7 h-7 bg-amber-900/30 rounded-lg flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-house text-amber-400 text-sm"></i>
+                            </div>
+                            <div class="leading-none">
+                                <div class="text-xs font-medium text-slate-200">Cozy Room</div>
+                                <span class="text-[9px] text-slate-500 font-mono">16:9 Cinema</span>
+                            </div>
+                        </button>
+                        <button onclick="loadExample('logo')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                            <div class="w-7 h-7 bg-emerald-900/30 rounded-lg flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-award text-emerald-400 text-sm"></i>
+                            </div>
+                            <div class="leading-none">
+                                <div class="text-xs font-medium text-slate-200">Wordmark Logo</div>
+                                <span class="text-[9px] text-slate-500 font-mono">1:1 Branding</span>
+                            </div>
+                        </button>
+                        <button onclick="loadExample('ad')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                            <div class="w-7 h-7 bg-sky-900/30 rounded-lg flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-bullhorn text-sky-400 text-sm"></i>
+                            </div>
+                            <div class="leading-none">
+                                <div class="text-xs font-medium text-slate-200">Product Ad</div>
+                                <span class="text-[9px] text-slate-500 font-mono">4:3 Standard</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reference Image Upload -->
+                <div class="border-t border-slate-800/80 pt-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="section-header">Composition Guide</div>
+                        <button onclick="clearRefImage()" class="text-[10px] px-2 py-0.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition-all">Clear</button>
+                    </div>
+                    <input type="file" id="ref-image-input" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border file:border-slate-800 file:text-xs file:bg-slate-950 file:text-slate-300 hover:file:bg-slate-900 file:cursor-pointer transition-all">
+                    <p class="text-[10px] text-slate-500 mt-1.5">Load an image background to trace and layout bounding boxes perfectly.</p>
+                </div>
+            </div>
+
+            <!-- Card 2: Bounding Box Selection Manager -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="section-header">Active Bounding Boxes <span id="box-count-list" class="text-slate-400 font-mono ml-1">(0)</span></div>
+                    <button onclick="clearAllBoxes()" class="text-xs text-red-400 hover:text-red-355 flex items-center gap-1 transition-colors">
+                        <i class="fa-solid fa-circle-xmark"></i> <span>Clear all</span>
+                    </button>
+                </div>
+                <div id="box-list" class="flex flex-wrap gap-1.5 min-h-[46px] p-2 bg-slate-950/60 rounded-xl border border-slate-850/60">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <!-- Card 3: Selected Box Detail Editor -->
+            <div id="selected-box-card" class="bg-slate-900 border border-slate-700 rounded-2xl p-5 ideogram-box scroll-mt-6">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="section-header">Selected Box</div>
+                    <button onclick="deleteSelectedBox()" id="delete-selected-btn"
+                            class="hidden text-xs px-2 py-1 text-red-400 hover:text-red-355 flex items-center gap-x-1 transition-colors">
+                        <i class="fa-solid fa-trash-can"></i> <span>Delete</span>
+                    </button>
+                </div>
+                
+                <div id="no-selection" class="text-center py-4 text-slate-500 text-sm italic">
+                    Click a box on the canvas or in the active list above to edit its parameters.
+                </div>
+                
+                <div id="box-editor" class="hidden space-y-3">
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Type</label>
+                            <select id="box-type" onchange="updateSelectedBox()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm">
+                                <option value="obj">Object / Subject (obj)</option>
+                                <option value="text">In-image Text (text)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">ID</label>
+                            <div id="box-id-display" class="font-mono text-xs bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-400 w-14 text-center"></div>
+                        </div>
+                    </div>
+
+                    <!-- BBox numbers -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Bounding Box (0–1000 normalized)</label>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div>
+                                <div class="text-[10px] text-slate-400">Y min</div>
+                                <input id="bbox-ymin" type="number" min="0" max="1000" step="1" 
+                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400">X min</div>
+                                <input id="bbox-xmin" type="number" min="0" max="1000" step="1" 
+                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400">Y max</div>
+                                <input id="bbox-ymax" type="number" min="0" max="1000" step="1" 
+                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400">X max</div>
+                                <input id="bbox-xmax" type="number" min="0" max="1000" step="1" 
+                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="text-specific">
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Literal Text (exact string to render)</label>
+                        <input id="box-text" type="text" placeholder="SALE • 50% OFF" 
+                               class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-lg p-2.5 text-sm"
+                               oninput="updateSelectedBox()">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Description / Visual styling</label>
+                        <textarea id="box-desc" rows="2" placeholder="Bold condensed sans-serif, deep red with slight texture..."
+                                  class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-3 text-sm resize-y"
+                                  oninput="updateSelectedBox()"></textarea>
+                    </div>
+
+                    <!-- Per-element color palette -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Element Color Palette (optional, up to 5)</label>
+                        <div id="element-palette-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[26px]"></div>
+                        <div class="flex gap-2">
+                            <input id="element-color-picker" type="color" value="#10b981" class="w-9 h-9 p-0 border border-slate-600 rounded-lg overflow-hidden cursor-pointer">
+                            <button onclick="addElementColor()" 
+                                    class="flex-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg px-3 text-slate-300">+ Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: Global Prompt Setup -->
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 ideogram-box">
+                <div class="section-header mb-3">Global Prompt</div>
+                
+                <div class="space-y-4">
+                    <!-- High level -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-medium text-slate-300">High-level description</label>
+                            <button onclick="suggestHighLevel()" class="text-[10px] px-2 py-0.5 bg-slate-700 hover:bg-slate-600 border border-slate-650 rounded text-slate-300 flex items-center gap-1 transition-all">
+                                <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> <span>Suggest from boxes</span>
+                            </button>
+                        </div>
+                        <textarea id="high-level" rows="2" placeholder="A clean minimalist poster for a tech conference..."
+                                  class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-3 text-sm resize-y"
+                                  oninput="debouncedUpdateJSON()"></textarea>
+                    </div>
+                    
+                    <!-- Background -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Background / Environment</label>
+                        <textarea id="background" rows="2" placeholder="Solid deep navy background with subtle paper texture..."
+                                  class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-3 text-sm resize-y"
+                                  oninput="debouncedUpdateJSON()"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5: Style Description and Aesthetics -->
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 ideogram-box">
+                <div class="section-header mb-3">Style Description</div>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Aesthetics</label>
+                        <input id="aesthetics" type="text" placeholder="minimal, modern, professional, high contrast"
+                               class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-2.5 text-sm"
+                               oninput="debouncedUpdateJSON()">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Lighting</label>
+                        <input id="lighting" type="text" placeholder="soft studio lighting, even diffuse key light"
+                               class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-2.5 text-sm"
+                               oninput="debouncedUpdateJSON()">
+                    </div>
+
+                    <!-- Style mode -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Style Mode</label>
+                        <div class="flex rounded-lg border border-slate-700 overflow-hidden text-sm">
+                            <button id="style-photo-btn" onclick="setStyleMode('photo')" 
+                                    class="flex-1 py-1.5 px-3 bg-blue-600 text-white font-medium text-xs">Photograph</button>
+                            <button id="style-art-btn" onclick="setStyleMode('art')" 
+                                    class="flex-1 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 font-medium text-xs">Art / Illustration</button>
+                        </div>
+                    </div>
+
+                    <div id="photo-fields">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Photo details (lens, film, etc.)</label>
+                            <input id="photo-details" type="text" placeholder="35mm, f/1.8, shallow depth of field, Kodak Portra grain"
+                                   class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-2.5 text-sm"
+                                   oninput="debouncedUpdateJSON()">
+                        </div>
+                        <div class="mt-2">
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Medium</label>
+                            <input id="photo-medium" type="text" value="photograph" 
+                                   class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-2.5 text-sm"
+                                   oninput="debouncedUpdateJSON()">
+                        </div>
+                    </div>
+
+                    <div id="art-fields" class="hidden">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Art style</label>
+                            <input id="art-style" type="text" placeholder="flat vector illustration, bold outlines, limited palette"
+                                   class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-2.5 text-sm"
+                                   oninput="debouncedUpdateJSON()">
+                        </div>
+                        <div class="mt-2">
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Medium</label>
+                            <input id="art-medium" type="text" value="illustration" 
+                                   class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-2.5 text-sm"
+                                   oninput="debouncedUpdateJSON()">
+                        </div>
+                    </div>
+
+                    <!-- Global Color Palette -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Global Color Palette (up to 16 hex)</label>
+                        <div id="global-palette-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[28px]"></div>
+                        <div class="flex gap-2">
+                            <input id="global-color-picker" type="color" value="#3b82f6" class="w-9 h-9 p-0 border border-slate-600 rounded-lg overflow-hidden cursor-pointer">
+                            <button onclick="addGlobalColor()" 
+                                    class="flex-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg px-3 text-slate-300">+ Add color</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 6: Live JSON Output -->
+            <div class="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden ideogram-box">
+                <div class="px-5 pt-4 pb-2 flex items-center justify-between border-b border-slate-700 bg-slate-950/60">
+                    <div class="font-medium text-sm flex items-center gap-x-2">
+                        <i class="fa-solid fa-code text-blue-400"></i> 
+                        <span>Generated JSON Prompt</span>
+                    </div>
+                    <div class="flex items-center gap-x-1">
+                        <!-- Format Toggles matching Python separators=(",", ":") specifications -->
+                        <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 mr-2">
+                            <button id="format-pretty-btn" onclick="setJSONFormat(false)" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-600 text-white transition-colors">Pretty</button>
+                            <button id="format-mini-btn" onclick="setJSONFormat(true)" class="text-[10px] font-semibold px-2 py-0.5 rounded text-slate-400 hover:text-slate-200 transition-colors">Compact</button>
+                        </div>
+                        <button onclick="copyJSON()" 
+                                class="text-xs flex items-center gap-x-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-550 rounded-lg text-white transition-colors">
+                            <i class="fa-solid fa-copy"></i>
+                            <span class="hidden sm:inline">Copy</span>
+                        </button>
+                        <button onclick="downloadJSON()" 
+                                class="text-xs flex items-center gap-x-1.5 px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
+                            <i class="fa-solid fa-download"></i>
+                            <span class="hidden sm:inline">Download</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <textarea id="json-output" readonly rows="12"
+                              class="json-output w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-emerald-300 font-mono resize-y leading-relaxed"></textarea>
+                </div>
+                <div class="px-4 pb-3 text-[10px] text-slate-500 flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                    <span>Compact format minimizes spaces to align with the training data distribution format.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let boxes = [];
+        let selectedBoxId = null;
+        let currentAspectW = 16;
+        let currentAspectH = 9;
+        let isDrawing = false;
+        let drawStart = null;
+        let draggingBoxId = null;
+        let dragStartNormalized = null;
+        let resizingBoxId = null;
+        let resizeCorner = null;  // 'tl', 'tr', 'bl', 'br'
+        let globalColorPalette = [];
+        let styleMode = 'photo';
+        let isMinifiedJSON = false;
+
+        let boxCounter = 0;
+
+        // Debounce helper
+        let updateTimeout = null;
+        function debouncedUpdateJSON() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(() => {
+                updateJSONOutput();
+            }, 180);
+        }
+
+        function updateBoxCount() {
+            const count = boxes.length;
+            document.getElementById('box-count-list').textContent = `(${count})`;
+        }
+
+        function updateCurrentAspectDisplay() {
+            const display = document.getElementById('current-aspect-display');
+            const w = currentAspectW;
+            const h = currentAspectH;
+            const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+            const g = gcd(w, h);
+            const simplified = `${w/g}:${h/g}`;
+            
+            // Approximate pixel example at ~1024 base
+            const base = 1024;
+            const displayW = Math.round(base);
+            const displayH = Math.round(base * (h / w));
+            display.innerHTML = `${simplified} • ${displayW}×${displayH}`;
+        }
+
+        function setAspectRatio(w, h) {
+            currentAspectW = w;
+            currentAspectH = h;
+            
+            // Update active button
+            document.querySelectorAll('.aspect-btn').forEach(btn => {
+                btn.classList.remove('active', 'border-blue-500', 'bg-blue-600', 'text-white');
+                btn.classList.add('border-slate-800', 'bg-slate-950');
+                
+                const text = btn.textContent.trim();
+                if ((w === 1 && h === 1 && text === '1:1') ||
+                    (w === 4 && h === 3 && text === '4:3') ||
+                    (w === 3 && h === 2 && text === '3:2') ||
+                    (w === 16 && h === 9 && text === '16:9') ||
+                    (w === 9 && h === 16 && text === '9:16') ||
+                    (w === 2 && h === 3 && text === '2:3') ||
+                    (w === 3 && h === 4 && text === '3:4') ||
+                    (w === 21 && h === 9 && text === '21:9')) {
+                    btn.classList.add('active', 'border-blue-500', 'bg-blue-600', 'text-white');
+                    btn.classList.remove('border-slate-800', 'bg-slate-950');
+                }
+            });
+            
+            applyAspectToCanvas();
+            updateCurrentAspectDisplay();
+            renderBoxes(); // re-position boxes with new aspect
+            debouncedUpdateJSON();
+        }
+
+        function updateCustomAspect() {
+            // Updated dynamically on change
+        }
+
+        function applyCustomAspect() {
+            const w = parseInt(document.getElementById('custom-w').value) || 16;
+            const h = parseInt(document.getElementById('custom-h').value) || 9;
+            if (w > 0 && h > 0) {
+                setAspectRatio(w, h);
+            }
+        }
+
+        function applyAspectToCanvas() {
+            const parent = document.getElementById('canvas-wrapper');
+            const canvas = document.getElementById('canvas-container');
+            if (!parent || !canvas) return;
+            
+            const rect = parent.getBoundingClientRect();
+            const parentW = rect.width - 8; // 4px padding on each side (8px total)
+            const parentH = rect.height - 8;
+            
+            const aspect = currentAspectW / currentAspectH;
+            
+            let targetW, targetH;
+            if (parentW / parentH > aspect) {
+                // Height limit
+                targetH = parentH;
+                targetW = parentH * aspect;
+            } else {
+                // Width limit
+                targetW = parentW;
+                targetH = parentW / aspect;
+            }
+            
+            canvas.style.width = `${targetW}px`;
+            canvas.style.height = `${targetH}px`;
+            canvas.style.aspectRatio = `${currentAspectW} / ${currentAspectH}`;
+            
+            // Update custom inputs
+            document.getElementById('custom-w').value = currentAspectW;
+            document.getElementById('custom-h').value = currentAspectH;
+        }
+
+        // Get normalized position from mouse event
+        function getNormalizedPos(e, container) {
+            const rect = container.getBoundingClientRect();
+            const x = Math.max(0, Math.min(1000, ((e.clientX - rect.left) / rect.width) * 1000));
+            const y = Math.max(0, Math.min(1000, ((e.clientY - rect.top) / rect.height) * 1000));
+            return { x: Math.round(x), y: Math.round(y) };
+        }
+
+        // Start interaction on canvas
+        function startCanvasInteraction(e) {
+            const container = document.getElementById('canvas-container');
+            const target = e.target;
+            
+            // Allow event to go through if selecting handles or existing structures
+            if (target.closest('.bbox') || target.closest('.bbox-handle')) {
+                return;
+            }
+            
+            isDrawing = true;
+            const pos = getNormalizedPos(e, container);
+            drawStart = pos;
+            
+            // Create temporary preview box
+            let tempBox = document.getElementById('temp-draw-box');
+            if (!tempBox) {
+                tempBox = document.createElement('div');
+                tempBox.id = 'temp-draw-box';
+                tempBox.style.position = 'absolute';
+                tempBox.style.border = '2px dashed #64748b';
+                tempBox.style.backgroundColor = 'rgba(100, 116, 139, 0.1)';
+                tempBox.style.pointerEvents = 'none';
+                container.appendChild(tempBox);
+            }
+        }
+
+        function handleCanvasMouseMove(e) {
+            const container = document.getElementById('canvas-container');
+            
+            if (isDrawing && drawStart) {
+                const current = getNormalizedPos(e, container);
+                const tempBox = document.getElementById('temp-draw-box');
+                
+                if (tempBox) {
+                    const x1 = Math.min(drawStart.x, current.x);
+                    const y1 = Math.min(drawStart.y, current.y);
+                    const x2 = Math.max(drawStart.x, current.x);
+                    const y2 = Math.max(drawStart.y, current.y);
+                    
+                    const left = (x1 / 1000) * 100;
+                    const top = (y1 / 1000) * 100;
+                    const width = ((x2 - x1) / 1000) * 100;
+                    const height = ((y2 - y1) / 1000) * 100;
+                    
+                    tempBox.style.left = left + '%';
+                    tempBox.style.top = top + '%';
+                    tempBox.style.width = Math.max(1, width) + '%';
+                    tempBox.style.height = Math.max(1, height) + '%';
+                }
+            }
+            
+            // Handle box dragging (move)
+            if (draggingBoxId !== null && dragStartNormalized) {
+                const current = getNormalizedPos(e, container);
+                const box = boxes.find(b => b.id === draggingBoxId);
+                if (!box) return;
+                
+                const deltaX = current.x - dragStartNormalized.x;
+                const deltaY = current.y - dragStartNormalized.y;
+                
+                let newXmin = Math.max(0, Math.min(1000, box.bbox[1] + deltaX));
+                let newYmin = Math.max(0, Math.min(1000, box.bbox[0] + deltaY));
+                
+                let newXmax = newXmin + (box.bbox[3] - box.bbox[1]);
+                let newYmax = newYmin + (box.bbox[2] - box.bbox[0]);
+                
+                // Clamp to bounds
+                if (newXmax > 1000) {
+                    const over = newXmax - 1000;
+                    newXmin -= over;
+                    newXmax = 1000;
+                }
+                if (newYmax > 1000) {
+                    const over = newYmax - 1000;
+                    newYmin -= over;
+                    newYmax = 1000;
+                }
+                if (newXmin < 0) {
+                    newXmax -= newXmin;
+                    newXmin = 0;
+                }
+                if (newYmin < 0) {
+                    newYmax -= newYmin;
+                    newYmin = 0;
+                }
+                
+                box.bbox = [Math.round(newYmin), Math.round(newXmin), Math.round(newYmax), Math.round(newXmax)];
+                
+                // Live update the DOM element
+                const boxEl = document.querySelector(`.bbox[data-id="${draggingBoxId}"]`);
+                if (boxEl) {
+                    updateBoxElementStyle(boxEl, box);
+                }
+                
+                // Update form if selected
+                if (selectedBoxId === draggingBoxId) {
+                    syncFormFromBox(box);
+                }
+                
+                dragStartNormalized = current; // continuous drag
+                debouncedUpdateJSON();
+            }
+            
+            // Handle resizing via corner handles
+            if (resizingBoxId !== null && resizeCorner) {
+                const current = getNormalizedPos(e, container);
+                const box = boxes.find(b => b.id === resizingBoxId);
+                if (!box) return;
+                
+                let [ymin, xmin, ymax, xmax] = box.bbox;
+                
+                if (resizeCorner === 'tl') {
+                    ymin = current.y;
+                    xmin = current.x;
+                } else if (resizeCorner === 'tr') {
+                    ymin = current.y;
+                    xmax = current.x;
+                } else if (resizeCorner === 'bl') {
+                    ymax = current.y;
+                    xmin = current.x;
+                } else if (resizeCorner === 'br') {
+                    ymax = current.y;
+                    xmax = current.x;
+                }
+                
+                // Ensure positive size and clamp
+                if (xmin > xmax) [xmin, xmax] = [xmax, xmin];
+                if (ymin > ymax) [ymin, ymax] = [ymax, ymin];
+                
+                xmin = Math.max(0, Math.min(1000, xmin));
+                ymin = Math.max(0, Math.min(1000, ymin));
+                xmax = Math.max(0, Math.min(1000, xmax));
+                ymax = Math.max(0, Math.min(1000, ymax));
+                
+                // Minimum size guard
+                if (xmax - xmin < 20) {
+                    if (resizeCorner.includes('l')) xmin = xmax - 20;
+                    else xmax = xmin + 20;
+                }
+                if (ymax - ymin < 20) {
+                    if (resizeCorner.includes('t')) ymin = ymax - 20;
+                    else ymax = ymin + 20;
+                }
+                
+                box.bbox = [Math.round(ymin), Math.round(xmin), Math.round(ymax), Math.round(xmax)];
+                
+                // Live update DOM
+                const boxEl = document.querySelector(`.bbox[data-id="${resizingBoxId}"]`);
+                if (boxEl) {
+                    updateBoxElementStyle(boxEl, box);
+                }
+                
+                // Update form numbers if this box is selected
+                if (selectedBoxId === resizingBoxId) {
+                    syncFormFromBox(box);
+                }
+                
+                debouncedUpdateJSON();
+            }
+        }
+
+        function endCanvasInteraction(e) {
+            const container = document.getElementById('canvas-container');
+            
+            if (isDrawing && drawStart) {
+                const end = getNormalizedPos(e, container);
+                const tempBox = document.getElementById('temp-draw-box');
+                
+                const x1 = Math.min(drawStart.x, end.x);
+                const y1 = Math.min(drawStart.y, end.y);
+                const x2 = Math.max(drawStart.x, end.x);
+                const y2 = Math.max(drawStart.y, end.y);
+                
+                const width = x2 - x1;
+                const height = y2 - y1;
+                
+                // Only create if reasonable size
+                if (width > 25 && height > 25) {
+                    const newBox = {
+                        id: ++boxCounter,
+                        type: 'obj',
+                        bbox: [y1, x1, y2, x2],
+                        desc: 'A prominent object in the scene',
+                        text: '',
+                        color_palette: []
+                    };
+                    boxes.push(newBox);
+                    renderBoxes();
+                    selectBox(newBox.id);
+                    updateBoxCount();
+                    updateJSONOutput();
+                }
+                
+                if (tempBox) tempBox.remove();
+                isDrawing = false;
+                drawStart = null;
+            }
+            
+            // End dragging
+            if (draggingBoxId !== null) {
+                draggingBoxId = null;
+                dragStartNormalized = null;
+                renderBoxes(); // final clean render
+            }
+            
+            // End resizing
+            if (resizingBoxId !== null) {
+                resizingBoxId = null;
+                resizeCorner = null;
+                renderBoxes(); // final clean render + handles
+            }
+        }
+
+        function updateBoxElementStyle(boxEl, boxData) {
+            const [ymin, xmin, ymax, xmax] = boxData.bbox;
+            boxEl.style.left = (xmin / 1000 * 100) + '%';
+            boxEl.style.top = (ymin / 1000 * 100) + '%';
+            boxEl.style.width = ((xmax - xmin) / 1000 * 100) + '%';
+            boxEl.style.height = ((ymax - ymin) / 1000 * 100) + '%';
+            
+            // Update label
+            const label = boxEl.querySelector('.bbox-label');
+            if (label) {
+                let labelText = `${boxData.id}: ${boxData.type}`;
+                if (boxData.type === 'text' && boxData.text) {
+                    labelText += ` "${boxData.text.substring(0, 18)}${boxData.text.length > 18 ? '…' : ''}"`;
+                } else if (boxData.desc) {
+                    labelText += ` ${boxData.desc.substring(0, 22)}${boxData.desc.length > 22 ? '…' : ''}`;
+                }
+                label.textContent = labelText;
+            }
+            
+            // Update classes for type
+            boxEl.classList.toggle('text-type', boxData.type === 'text');
+        }
+
+        function createBoxElement(boxData) {
+            const container = document.getElementById('canvas-container');
+            const layer = document.getElementById('boxes-layer');
+            
+            const boxEl = document.createElement('div');
+            boxEl.className = `bbox ${boxData.type === 'text' ? 'text-type' : ''}`;
+            boxEl.dataset.id = boxData.id;
+            
+            // Style positioning
+            updateBoxElementStyle(boxEl, boxData);
+            
+            // Label
+            const label = document.createElement('div');
+            label.className = 'bbox-label';
+            boxEl.appendChild(label);
+            
+            // === RESIZE HANDLES (4 corners) ===
+            const corners = [
+                { corner: 'tl', style: 'top: -5px; left: -5px; cursor: nwse-resize;' },
+                { corner: 'tr', style: 'top: -5px; right: -5px; cursor: nesw-resize;' },
+                { corner: 'bl', style: 'bottom: -5px; left: -5px; cursor: nesw-resize;' },
+                { corner: 'br', style: 'bottom: -5px; right: -5px; cursor: nwse-resize;' }
+            ];
+            
+            corners.forEach(({ corner, style }) => {
+                const handle = document.createElement('div');
+                handle.className = 'bbox-handle';
+                handle.style.cssText = style + ' width: 12px; height: 12px; border-radius: 50%; background: white; border: 2px solid #3b82f6; box-shadow: 0 1px 3px rgba(0,0,0,0.3); z-index: 30;';
+                handle.dataset.corner = corner;
+                
+                handle.addEventListener('mousedown', (ev) => {
+                    ev.stopImmediatePropagation();
+                    selectBox(boxData.id);
+                    
+                    resizingBoxId = boxData.id;
+                    resizeCorner = corner;
+                });
+                
+                boxEl.appendChild(handle);
+            });
+            
+            // Selection & drag handlers (on the main box, not handles)
+            boxEl.addEventListener('mousedown', (ev) => {
+                if (ev.target.classList.contains('bbox-handle')) return;
+                
+                ev.stopImmediatePropagation();
+                selectBox(boxData.id);
+                
+                // Start drag move
+                draggingBoxId = boxData.id;
+                dragStartNormalized = getNormalizedPos(ev, container);
+            });
+            
+            boxEl.addEventListener('click', (ev) => {
+                if (ev.target.classList.contains('bbox-handle')) return;
+                ev.stopImmediatePropagation();
+                selectBox(boxData.id);
+            });
+            
+            // Double click to focus editor
+            boxEl.addEventListener('dblclick', (ev) => {
+                if (ev.target.classList.contains('bbox-handle')) return;
+                selectBox(boxData.id);
+                document.getElementById('box-desc').focus();
+            });
+            
+            layer.appendChild(boxEl);
+            return boxEl;
+        }
+
+        function renderBoxes() {
+            const layer = document.getElementById('boxes-layer');
+            layer.innerHTML = '';
+            
+            boxes.forEach(box => {
+                const el = createBoxElement(box);
+                
+                // Highlight if selected
+                if (box.id === selectedBoxId) {
+                    el.classList.add('selected');
+                }
+            });
+            
+            updateBoxList();
+        }
+
+        function updateBoxList() {
+            const listEl = document.getElementById('box-list');
+            listEl.innerHTML = '';
+            
+            if (boxes.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'text-xs text-slate-500 italic px-1 py-1 w-full text-center';
+                empty.textContent = 'No boxes defined yet. Draw on the canvas area.';
+                listEl.appendChild(empty);
+                return;
+            }
+            
+            boxes.forEach(box => {
+                const item = document.createElement('div');
+                item.className = `inline-flex items-center gap-x-1.5 px-2.5 py-1 text-xs rounded-full border cursor-pointer transition-colors ${box.id === selectedBoxId ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-800 border-slate-700 hover:bg-slate-700'}`;
+                
+                let label = `${box.id} • ${box.type}`;
+                if (box.type === 'text' && box.text) {
+                    label += ` "${box.text.substring(0,12)}${box.text.length > 12 ? '…' : ''}"`;
+                }
+                
+                item.innerHTML = `
+                    <span class="font-mono">${label}</span>
+                    <button class="ml-1 text-red-400 hover:text-red-300 transition-colors" onclick="event.stopImmediatePropagation(); deleteBox(${box.id});">
+                        <i class="fa-solid fa-times text-[10px]"></i>
+                    </button>
+                `;
+                
+                item.onclick = () => selectBox(box.id);
+                listEl.appendChild(item);
+            });
+        }
+
+        function selectBox(id) {
+            selectedBoxId = id;
+            
+            // Update visual selection
+            document.querySelectorAll('.bbox').forEach(el => {
+                el.classList.toggle('selected', parseInt(el.dataset.id) === id);
+            });
+            
+            const box = boxes.find(b => b.id === id);
+            if (!box) {
+                document.getElementById('no-selection').classList.remove('hidden');
+                document.getElementById('box-editor').classList.add('hidden');
+                document.getElementById('delete-selected-btn').classList.add('hidden');
+                return;
+            }
+            
+            // Show editor
+            document.getElementById('no-selection').classList.add('hidden');
+            document.getElementById('box-editor').classList.remove('hidden');
+            document.getElementById('delete-selected-btn').classList.remove('hidden');
+            
+            // Populate form
+            document.getElementById('box-id-display').textContent = box.id;
+            document.getElementById('box-type').value = box.type;
+            document.getElementById('bbox-ymin').value = box.bbox[0];
+            document.getElementById('bbox-xmin').value = box.bbox[1];
+            document.getElementById('bbox-ymax').value = box.bbox[2];
+            document.getElementById('bbox-xmax').value = box.bbox[3];
+            document.getElementById('box-desc').value = box.desc || '';
+            document.getElementById('box-text').value = box.text || '';
+            
+            // Show/hide text field
+            const textField = document.getElementById('text-specific');
+            textField.style.display = (box.type === 'text') ? 'block' : 'none';
+            
+            // Render element palette chips
+            renderElementPaletteChips(box);
+
+            // Automatically scroll right-hand editor card into viewport
+            const rightPanel = document.getElementById('right-panel');
+            const targetCard = document.getElementById('selected-box-card');
+            if (rightPanel && targetCard) {
+                setTimeout(() => {
+                    targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 40);
+            }
+        }
+
+        function syncFormFromBox(box) {
+            document.getElementById('bbox-ymin').value = box.bbox[0];
+            document.getElementById('bbox-xmin').value = box.bbox[1];
+            document.getElementById('bbox-ymax').value = box.bbox[2];
+            document.getElementById('bbox-xmax').value = box.bbox[3];
+        }
+
+        function updateSelectedBox() {
+            if (!selectedBoxId) return;
+            
+            const box = boxes.find(b => b.id === selectedBoxId);
+            if (!box) return;
+            
+            const type = document.getElementById('box-type').value;
+            const ymin = parseInt(document.getElementById('bbox-ymin').value) || 0;
+            const xmin = parseInt(document.getElementById('bbox-xmin').value) || 0;
+            const ymax = parseInt(document.getElementById('bbox-ymax').value) || 100;
+            const xmax = parseInt(document.getElementById('bbox-xmax').value) || 100;
+            
+            box.type = type;
+            box.bbox = [
+                Math.max(0, Math.min(1000, ymin)),
+                Math.max(0, Math.min(1000, xmin)),
+                Math.max(0, Math.min(1000, ymax)),
+                Math.max(0, Math.min(1000, xmax))
+            ];
+            box.desc = document.getElementById('box-desc').value.trim();
+            
+            if (type === 'text') {
+                box.text = document.getElementById('box-text').value.trim();
+            } else {
+                box.text = '';
+            }
+            
+            // Re-render this box visually
+            const boxEl = document.querySelector(`.bbox[data-id="${selectedBoxId}"]`);
+            if (boxEl) {
+                boxEl.classList.toggle('text-type', type === 'text');
+                updateBoxElementStyle(boxEl, box);
+            }
+            
+            // Update list
+            updateBoxList();
+            
+            // Update text field visibility
+            document.getElementById('text-specific').style.display = (type === 'text') ? 'block' : 'none';
+            
+            debouncedUpdateJSON();
+        }
+
+        function deleteSelectedBox() {
+            if (!selectedBoxId) return;
+            deleteBox(selectedBoxId);
+        }
+
+        function deleteBox(id) {
+            boxes = boxes.filter(b => b.id !== id);
+            
+            if (selectedBoxId === id) {
+                selectedBoxId = null;
+                document.getElementById('no-selection').classList.remove('hidden');
+                document.getElementById('box-editor').classList.add('hidden');
+                document.getElementById('delete-selected-btn').classList.add('hidden');
+            }
+            
+            renderBoxes();
+            updateBoxCount();
+            updateJSONOutput();
+        }
+
+        function addDefaultBox() {
+            const cx = 500;
+            const cy = 500;
+            const bw = 280;
+            const bh = 220;
+            
+            const newBox = {
+                id: ++boxCounter,
+                type: 'obj',
+                bbox: [cy - bh/2, cx - bw/2, cy + bh/2, cx + bw/2],
+                desc: 'Main subject or element',
+                text: '',
+                color_palette: []
+            };
+            
+            boxes.push(newBox);
+            renderBoxes();
+            selectBox(newBox.id);
+            updateBoxCount();
+            updateJSONOutput();
+        }
+
+        function clearAllBoxes() {
+            if (!confirm('Clear all bounding boxes?')) return;
+            boxes = [];
+            selectedBoxId = null;
+            document.getElementById('boxes-layer').innerHTML = '';
+            document.getElementById('no-selection').classList.remove('hidden');
+            document.getElementById('box-editor').classList.add('hidden');
+            document.getElementById('delete-selected-btn').classList.add('hidden');
+            updateBoxList();
+            updateBoxCount();
+            updateJSONOutput();
+        }
+
+        // Reference image setup
+        function setupRefImageUpload() {
+            const input = document.getElementById('ref-image-input');
+            if (!input) return;
+            
+            input.addEventListener('change', function() {
+                const file = this.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const container = document.getElementById('canvas-container');
+                    container.style.backgroundImage = `url(${ev.target.result})`;
+                    container.style.backgroundSize = 'contain';
+                    container.style.backgroundPosition = 'center';
+                    container.style.backgroundRepeat = 'no-repeat';
+                    container.style.opacity = '0.95';
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function clearRefImage() {
+            const container = document.getElementById('canvas-container');
+            container.style.backgroundImage = '';
+            container.style.backgroundSize = '';
+            container.style.backgroundPosition = '';
+            container.style.backgroundRepeat = '';
+            container.style.opacity = '1';
+            
+            const input = document.getElementById('ref-image-input');
+            if (input) input.value = '';
+        }
+
+        function suggestHighLevel() {
+            if (boxes.length === 0) {
+                alert('Add some bounding boxes first to generate a suggestion.');
+                return;
+            }
+            
+            const bg = document.getElementById('background').value.trim() || 'a suitable environment';
+            const elementDescs = boxes.map(b => b.desc || (b.text ? `text "${b.text}"` : 'an element')).slice(0, 5);
+            
+            let suggestion = `A composition featuring ${elementDescs.join(', ')} against ${bg.toLowerCase()}.`;
+            suggestion = suggestion.charAt(0).toUpperCase() + suggestion.slice(1);
+            
+            document.getElementById('high-level').value = suggestion;
+            debouncedUpdateJSON();
+        }
+
+        // Palette helper functions
+        function renderGlobalPaletteChips() {
+            const container = document.getElementById('global-palette-chips');
+            container.innerHTML = '';
+            
+            globalColorPalette.forEach((color, index) => {
+                const chip = document.createElement('div');
+                chip.className = `flex items-center gap-x-1 px-1.5 py-0.5 text-xs rounded-full border border-slate-650 bg-slate-800`;
+                chip.innerHTML = `
+                    <div class="w-3.5 h-3.5 rounded" style="background-color: ${color}"></div>
+                    <span class="font-mono text-[10px] text-slate-300">${color}</span>
+                    <button class="ml-0.5 text-red-400 hover:text-red-300 leading-none" onclick="removeGlobalColor(${index}); event.stopImmediatePropagation();">×</button>
+                `;
+                container.appendChild(chip);
+            });
+        }
+
+        function addGlobalColor() {
+            const picker = document.getElementById('global-color-picker');
+            const hex = picker.value.toUpperCase();
+            if (!globalColorPalette.includes(hex) && globalColorPalette.length < 16) {
+                globalColorPalette.push(hex);
+                renderGlobalPaletteChips();
+                debouncedUpdateJSON();
+            }
+        }
+
+        function removeGlobalColor(index) {
+            globalColorPalette.splice(index, 1);
+            renderGlobalPaletteChips();
+            debouncedUpdateJSON();
+        }
+
+        function renderElementPaletteChips(box) {
+            const container = document.getElementById('element-palette-chips');
+            container.innerHTML = '';
+            
+            if (!box.color_palette) box.color_palette = [];
+            
+            box.color_palette.forEach((color, index) => {
+                const chip = document.createElement('div');
+                chip.className = `flex items-center gap-x-1 px-1.5 py-0.5 text-xs rounded-full border border-emerald-700 bg-emerald-900/30`;
+                chip.innerHTML = `
+                    <div class="w-3.5 h-3.5 rounded" style="background-color: ${color}"></div>
+                    <span class="font-mono text-[10px] text-emerald-300">${color}</span>
+                    <button class="ml-0.5 text-red-400 hover:text-red-300 leading-none" onclick="removeElementColor(${index}); event.stopImmediatePropagation();">×</button>
+                `;
+                container.appendChild(chip);
+            });
+        }
+
+        function addElementColor() {
+            if (!selectedBoxId) return;
+            const box = boxes.find(b => b.id === selectedBoxId);
+            if (!box) return;
+            
+            const picker = document.getElementById('element-color-picker');
+            const hex = picker.value.toUpperCase();
+            
+            if (!box.color_palette) box.color_palette = [];
+            if (!box.color_palette.includes(hex) && box.color_palette.length < 5) {
+                box.color_palette.push(hex);
+                renderElementPaletteChips(box);
+                debouncedUpdateJSON();
+            }
+        }
+
+        function removeElementColor(index) {
+            if (!selectedBoxId) return;
+            const box = boxes.find(b => b.id === selectedBoxId);
+            if (!box || !box.color_palette) return;
+            
+            box.color_palette.splice(index, 1);
+            renderElementPaletteChips(box);
+            debouncedUpdateJSON();
+        }
+
+        function setStyleMode(mode) {
+            styleMode = mode;
+            
+            const photoBtn = document.getElementById('style-photo-btn');
+            const artBtn = document.getElementById('style-art-btn');
+            const photoFields = document.getElementById('photo-fields');
+            const artFields = document.getElementById('art-fields');
+            
+            if (mode === 'photo') {
+                photoBtn.classList.add('bg-blue-600', 'text-white');
+                photoBtn.classList.remove('bg-slate-800');
+                artBtn.classList.remove('bg-blue-600', 'text-white');
+                artBtn.classList.add('bg-slate-800');
+                
+                photoFields.classList.remove('hidden');
+                artFields.classList.add('hidden');
+            } else {
+                artBtn.classList.add('bg-blue-600', 'text-white');
+                artBtn.classList.remove('bg-slate-800');
+                photoBtn.classList.remove('bg-blue-600', 'text-white');
+                photoBtn.classList.add('bg-slate-800');
+                
+                artFields.classList.remove('hidden');
+                photoFields.classList.add('hidden');
+            }
+            
+            debouncedUpdateJSON();
+        }
+
+        function buildJSON() {
+            const highLevel = document.getElementById('high-level').value.trim();
+            const background = document.getElementById('background').value.trim();
+            
+            const aesthetics = document.getElementById('aesthetics').value.trim();
+            const lighting = document.getElementById('lighting').value.trim();
+            const photo = document.getElementById('photo-details').value.trim();
+            const artStyle = document.getElementById('art-style').value.trim();
+            
+            let styleDesc = {};
+            const hasStyleData = aesthetics || lighting || photo || artStyle || globalColorPalette.length > 0;
+            
+            if (hasStyleData) {
+                // Strict key ordering according to Ideogram 4's CaptionVerifier structure
+                if (styleMode === 'photo') {
+                    const medium = document.getElementById('photo-medium').value.trim() || 'photograph';
+                    // Strict key order (Photo): aesthetics, lighting, photo, medium, color_palette
+                    styleDesc.aesthetics = aesthetics || 'cinematic, sharp focus';
+                    styleDesc.lighting = lighting || 'overcast daylight';
+                    styleDesc.photo = photo || '35mm, f/2.8';
+                    styleDesc.medium = medium;
+                } else {
+                    const medium = document.getElementById('art-medium').value.trim() || 'illustration';
+                    // Strict key order (Non-photo): aesthetics, lighting, medium, art_style, color_palette
+                    styleDesc.aesthetics = aesthetics || 'minimal, vector';
+                    styleDesc.lighting = lighting || 'flat, even';
+                    styleDesc.medium = medium;
+                    styleDesc.art_style = artStyle || 'flat illustration';
+                }
+                
+                if (globalColorPalette.length > 0) {
+                    styleDesc.color_palette = globalColorPalette;
+                }
+            }
+            
+            const elements = boxes.map(box => {
+                const el = {};
+                el.type = box.type;
+                
+                if (box.bbox) {
+                    el.bbox = box.bbox;
+                }
+                
+                if (box.type === 'text') {
+                    // Strict key order (Text): type, bbox, text, desc, color_palette
+                    el.text = box.text || '';
+                }
+                
+                el.desc = box.desc || '';
+                
+                if (box.color_palette && box.color_palette.length > 0) {
+                    el.color_palette = box.color_palette;
+                }
+                
+                return el;
+            });
+            
+            const prompt = {};
+            if (highLevel) {
+                prompt.high_level_description = highLevel;
+            }
+            if (hasStyleData) {
+                prompt.style_description = styleDesc;
+            }
+            
+            prompt.compositional_deconstruction = {
+                background: background || 'A clean background suitable for the described scene.',
+                elements: elements
+            };
+            
+            return prompt;
+        }
+
+        function setJSONFormat(minify) {
+            isMinifiedJSON = minify;
+            
+            const prettyBtn = document.getElementById('format-pretty-btn');
+            const miniBtn = document.getElementById('format-mini-btn');
+            
+            if (minify) {
+                miniBtn.classList.add('bg-blue-600', 'text-white');
+                miniBtn.classList.remove('text-slate-400', 'hover:text-slate-200');
+                prettyBtn.classList.remove('bg-blue-600', 'text-white');
+                prettyBtn.classList.add('text-slate-400', 'hover:text-slate-200');
+            } else {
+                prettyBtn.classList.add('bg-blue-600', 'text-white');
+                prettyBtn.classList.remove('text-slate-400', 'hover:text-slate-200');
+                miniBtn.classList.remove('bg-blue-600', 'text-white');
+                miniBtn.classList.add('text-slate-400', 'hover:text-slate-200');
+            }
+            
+            updateJSONOutput();
+        }
+
+        function updateJSONOutput() {
+            const promptObj = buildJSON();
+            const output = document.getElementById('json-output');
+            
+            if (isMinifiedJSON) {
+                // Generates equivalent separators=(",", ":") format with zero extra space as required by python implementation
+                output.value = JSON.stringify(promptObj);
+            } else {
+                output.value = JSON.stringify(promptObj, null, 2);
+            }
+        }
+
+        function copyJSON() {
+            const output = document.getElementById('json-output');
+            const text = output.value;
+            
+            if (!text) {
+                alert('No JSON generated yet.');
+                return;
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.createElement('div');
+                toast.className = 'fixed bottom-4 right-4 bg-emerald-600 text-white text-sm px-4 py-2 rounded-lg shadow-lg flex items-center gap-2';
+                toast.innerHTML = `<i class="fa-solid fa-check"></i> JSON copied to clipboard`;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 1600);
+            }).catch(() => {
+                output.select();
+                document.execCommand('copy');
+            });
+        }
+
+        function downloadJSON() {
+            const promptObj = buildJSON();
+            const dataStr = isMinifiedJSON ? JSON.stringify(promptObj) : JSON.stringify(promptObj, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportName = `ideogram4-prompt-${Date.now()}.json`;
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportName);
+            linkElement.click();
+        }
+
+        function loadExample(exampleType) {
+            boxes = [];
+            globalColorPalette = [];
+            selectedBoxId = null;
+            
+            if (exampleType === 'poster') {
+                document.getElementById('high-level').value = 'A bold square poster for a music festival with stacked typography and vibrant gradient background.';
+                document.getElementById('background').value = 'Full-bleed vibrant gradient from electric magenta through deep purple to cobalt blue, with fine halftone texture and subtle paper grain.';
+                
+                document.getElementById('aesthetics').value = 'maximalist, psychedelic, energetic, print-poster aesthetic';
+                document.getElementById('lighting').value = 'bright even studio light, slight riso offset registration';
+                setStyleMode('art');
+                document.getElementById('art-style').value = 'risograph print, bold condensed display typography';
+                document.getElementById('art-medium').value = 'graphic design print';
+                
+                globalColorPalette = ['#FF00AA', '#6B21A8', '#1E40AF', '#F59E0B'];
+                
+                boxes = [
+                    {id: ++boxCounter, type: 'text', bbox: [80, 120, 320, 680], desc: 'Large stacked headline in heavy condensed cream-yellow sans-serif with thin coral drop shadow', text: 'SOUND & COLOR\nFESTIVAL 2026', color_palette: []},
+                    {id: ++boxCounter, type: 'text', bbox: [340, 140, 420, 780], desc: 'Medium tier-one headliner names in cream condensed display', text: 'THE VELVET ORBIT\nMIDNIGHT PARADE', color_palette: []},
+                    {id: ++boxCounter, type: 'text', bbox: [440, 180, 520, 820], desc: 'Smaller supporting acts in tracked cream caps', text: 'CORAL STATIC • NEON FERNS', color_palette: []},
+                    {id: ++boxCounter, type: 'text', bbox: [540, 200, 610, 800], desc: 'Date and venue strip in bold caps on black bar', text: 'JULY 17 • RIVERSIDE PARK', color_palette: []},
+                    {id: ++boxCounter, type: 'obj', bbox: [50, 50, 950, 950], desc: 'Wavy psychedelic sun-ray graphics in cream and coral radiating from behind the title', color_palette: []}
+                ];
+                
+                setAspectRatio(1, 1);
+            } 
+            else if (exampleType === 'scene') {
+                document.getElementById('high-level').value = 'A soft contemporary illustration of a cozy late-afternoon living room with a young woman reading on a mustard sofa.';
+                document.getElementById('background').value = 'Warm off-white interior walls in a cozy living room with clean linework and flat color fills. Daylight pours in from the right window.';
+                
+                document.getElementById('aesthetics').value = 'soft contemporary illustration, warm and inviting';
+                document.getElementById('lighting').value = 'warm afternoon window light, soft elongated rectangle of light across the rug';
+                setStyleMode('art');
+                document.getElementById('art-style').value = 'soft contemporary illustration with clean confident linework, flat-but-warm color fills, light cel-shading';
+                document.getElementById('art-medium').value = 'illustration';
+                
+                globalColorPalette = ['#D4A017', '#F5F5DC', '#5C4033', '#6B8E23', '#87CEEB'];
+                
+                boxes = [
+                    {id: ++boxCounter, type: 'obj', bbox: [150, 295, 480, 660], desc: 'Young woman seated sideways on the sofa, body angled toward the window, holding an open paperback', color_palette: []},
+                    {id: ++boxCounter, type: 'obj', bbox: [40, 660, 835, 990], desc: 'Tall floor-to-ceiling window filling the right third, sheer white curtains, tree branch and rooftops visible', color_palette: []},
+                    {id: ++boxCounter, type: 'obj', bbox: [775, 90, 905, 340], desc: 'Tabby cat curled asleep on the jute rug near the woman\'s feet', color_palette: []},
+                    {id: ++boxCounter, type: 'obj', bbox: [560, 535, 890, 655], desc: 'Small potted monstera beside the window', color_palette: []},
+                    {id: ++boxCounter, type: 'text', bbox: [820, 410, 920, 580], desc: 'Small text label on a book spine in muted tones', text: 'READ ME', color_palette: []}
+                ];
+                
+                setAspectRatio(16, 9);
+            }
+            else if (exampleType === 'logo') {
+                document.getElementById('high-level').value = 'Minimal wordmark logo concept for a premium coffee brand on a textured kraft background.';
+                document.getElementById('background').value = 'Warm textured kraft paper background with subtle fiber details.';
+                
+                document.getElementById('aesthetics').value = 'minimal, premium, tactile, brand identity';
+                document.getElementById('lighting').value = 'soft even studio lighting, gentle shadow';
+                setStyleMode('art');
+                document.getElementById('art-style').value = 'clean bold sans-serif typography, generous negative space';
+                document.getElementById('art-medium').value = 'graphic design';
+                
+                globalColorPalette = ['#3C2F2F', '#D4A574', '#F5F5F5'];
+                
+                boxes = [
+                    {id: ++boxCounter, type: 'text', bbox: [320, 180, 520, 820], desc: 'Large elegant serif wordmark in deep brown, centered horizontally', text: 'HARBOR', color_palette: ['#3C2F2F']},
+                    {id: ++boxCounter, type: 'text', bbox: [540, 280, 620, 720], desc: 'Small tagline in light weight sans-serif below the main wordmark', text: 'COFFEE ROASTERS', color_palette: []},
+                    {id: ++boxCounter, type: 'obj', bbox: [420, 220, 580, 320], desc: 'Small stylized coffee bean icon centered above the wordmark', color_palette: []}
+                ];
+                
+                setAspectRatio(1, 1);
+            }
+            else if (exampleType === 'ad') {
+                document.getElementById('high-level').value = 'Clean product advertisement for wireless earbuds with bold headline and lifestyle photo treatment.';
+                document.getElementById('background').value = 'Minimal light gray studio background with soft gradient and subtle shadows.';
+                
+                document.getElementById('aesthetics').value = 'premium product photography, clean modern advertising';
+                document.getElementById('lighting').value = 'soft studio lighting, gentle key light from upper left';
+                setStyleMode('photo');
+                document.getElementById('photo-details').value = '85mm lens, f/2.8, shallow depth of field, high-end commercial';
+                document.getElementById('photo-medium').value = 'photograph';
+                
+                globalColorPalette = ['#F8FAFC', '#1E293B', '#0EA5E9'];
+                
+                boxes = [
+                    {id: ++boxCounter, type: 'obj', bbox: [120, 150, 620, 850], desc: 'Pair of sleek black wireless earbuds on a reflective surface', color_palette: []},
+                    {id: ++boxCounter, type: 'text', bbox: [680, 180, 820, 520], desc: 'Bold headline in modern sans-serif', text: 'SOUND\nREDEFINED', color_palette: []},
+                    {id: ++boxCounter, type: 'text', bbox: [700, 580, 900, 720], desc: 'Call to action in smaller caps', text: 'SHOP NOW', color_palette: []},
+                    {id: ++boxCounter, type: 'text', bbox: [680, 780, 920, 880], desc: 'Subtle price or tagline', text: 'From $129', color_palette: []}
+                ];
+                
+                setAspectRatio(4, 3);
+            }
+            
+            renderGlobalPaletteChips();
+            renderBoxes();
+            updateBoxCount();
+            selectBox(boxes.length > 0 ? boxes[0].id : null);
+            updateJSONOutput();
+        }
+
+        function autoSave() {
+            setInterval(() => {
+                try {
+                    const state = {
+                        boxes: boxes,
+                        globalColorPalette: globalColorPalette,
+                        aspectW: currentAspectW,
+                        aspectH: currentAspectH,
+                        highLevel: document.getElementById('high-level').value,
+                        background: document.getElementById('background').value,
+                        aesthetics: document.getElementById('aesthetics').value,
+                        lighting: document.getElementById('lighting').value
+                    };
+                    localStorage.setItem('ideogram4-prompt-builder-state', JSON.stringify(state));
+                } catch(e) {}
+            }, 8000);
+        }
+
+        function initializeUI() {
+            // Initial style mode
+            setStyleMode('photo');
+            document.getElementById('photo-details').value = '35mm film still, shallow depth of field, natural grain';
+            document.getElementById('photo-medium').value = 'photograph';
+            
+            // Initial global palette example
+            globalColorPalette = ['#1E3A5F', '#D4A017'];
+            renderGlobalPaletteChips();
+            
+            // Initial demo boxes (a simple living room scene)
+            boxes = [
+                { id: ++boxCounter, type: 'obj', bbox: [180, 220, 620, 780], desc: 'Young woman seated on a mustard yellow sofa reading a book', color_palette: [] },
+                { id: ++boxCounter, type: 'obj', bbox: [50, 650, 780, 980], desc: 'Tall window with soft daylight coming through', color_palette: [] },
+                { id: ++boxCounter, type: 'obj', bbox: [720, 120, 920, 380], desc: 'Sleeping tabby cat on the rug', color_palette: [] }
+            ];
+            
+            // Populate some defaults
+            document.getElementById('high-level').value = 'A soft contemporary illustration of a cozy late-afternoon living room with a young woman curled on a mustard sofa reading.';
+            document.getElementById('background').value = 'Warm off-white walls, woven jute rug, soft ambient daylight from the right window.';
+            document.getElementById('aesthetics').value = 'soft contemporary illustration, warm and inviting, clean linework';
+            document.getElementById('lighting').value = 'warm late-afternoon window light, soft elongated patch of sunlight';
+            
+            // Initialize ratio
+            setAspectRatio(16, 9);
+            
+            // ResizeObserver to scale canvas automatically to maintain 4px padding limit
+            const resizeObserver = new ResizeObserver(() => {
+                applyAspectToCanvas();
+            });
+            resizeObserver.observe(document.getElementById('canvas-wrapper'));
+
+            renderBoxes();
+            updateBoxCount();
+            updateCurrentAspectDisplay();
+            selectBox(1); // select first box
+            
+            updateJSONOutput();
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Delete' || e.key === 'Backspace') {
+                    if (selectedBoxId && document.activeElement.tagName === 'BODY') {
+                        e.preventDefault();
+                        deleteSelectedBox();
+                    }
+                }
+                if (e.key.toLowerCase() === 'a' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    addDefaultBox();
+                }
+            });
+            
+            // Clear selections on background click
+            const container = document.getElementById('canvas-container');
+            container.addEventListener('click', function(e) {
+                if (e.target.id === 'canvas-container' || e.target.id === 'boxes-layer') {
+                    selectedBoxId = null;
+                    document.querySelectorAll('.bbox').forEach(el => el.classList.remove('selected'));
+                    document.getElementById('no-selection').classList.remove('hidden');
+                    document.getElementById('box-editor').classList.add('hidden');
+                    document.getElementById('delete-selected-btn').classList.add('hidden');
+                }
+            });
+            
+            autoSave();
+            setupRefImageUpload();
+            
+            // Canvas listeners
+            const canvasContainer = document.getElementById('canvas-container');
+            canvasContainer.addEventListener('mousedown', startCanvasInteraction);
+            canvasContainer.addEventListener('mousemove', handleCanvasMouseMove);
+            canvasContainer.addEventListener('mouseup', endCanvasInteraction);
+            canvasContainer.addEventListener('mouseleave', endCanvasInteraction);
+            
+            updateBoxList();
+            updateJSONOutput();
+            
+            console.log('%c[Ideogram 4 Prompt Builder] UI initialized successfully.', 'color:#64748b');
+        }
+
+        function showHelp() {
+            const helpHTML = `
+                <div class="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onclick="this.remove()">
+                    <div onclick="event.stopImmediatePropagation()" class="max-w-lg w-full mx-4 bg-slate-900 border border-slate-750 rounded-2xl p-6">
+                        <h3 class="text-xl font-semibold mb-4">Prompt Builder Guide</h3>
+                        
+                        <div class="space-y-4 text-sm text-slate-300">
+                            <div>
+                                <strong class="text-white">1. Choose proportions</strong><br>
+                                Use the aspect-ratio choices inside the panel to size the canvas.
+                            </div>
+                            <div>
+                                <strong class="text-white">2. Place elements</strong><br>
+                                Drag across the canvas on the left to draw localized target areas. Selecting boxes allows you to scale or reposition them.
+                            </div>
+                            <div>
+                                <strong class="text-white">3. Configure elements</strong><br>
+                                Add textual descriptions, direct renderable keywords, or specific colors to individual elements.
+                            </div>
+                            <div>
+                                <strong class="text-white">4. Extract JSON</strong><br>
+                                Use the auto-generated structured JSON prompt from the final panel inside Ideogram 4's JSON mode.
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6 pt-4 border-t border-slate-800 text-xs text-slate-400">
+                            Coordinate structures use normalized 0-1000 scales mapped directly to the active resolution.
+                        </div>
+                        
+                        <div class="mt-4 text-right">
+                            <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 text-sm bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', helpHTML);
+        }
+
+        window.onload = function() {
+            initializeUI();
+        };
+        
+        window.IdeogramPromptBuilder = {
+            loadExample: (type) => loadExample(type),
+            getCurrentJSON: () => document.getElementById('json-output').value,
+            clearAll: () => clearAllBoxes()
+        };
+    </script>
+</body>
+</html>
