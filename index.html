@@ -130,6 +130,25 @@
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
+        /* Right panel tabs */
+        .tab-btn {
+            flex: 1;
+            padding: 0.7rem 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+            transition: color 0.15s ease, border-color 0.15s ease;
+            white-space: nowrap;
+        }
+        .tab-btn:hover {
+            color: #cbd5e1;
+        }
+        .tab-btn.active {
+            color: #ffffff;
+            border-bottom-color: #3b82f6;
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
@@ -203,8 +222,21 @@
             </div>
         </div>
 
-        <!-- RIGHT: SCROLLABLE CONTROL AND EDITING COLUMNS -->
-        <div id="right-panel" class="w-full lg:w-[42%] xl:w-[38%] border-t lg:border-t-0 lg:border-l border-slate-850 bg-slate-950/40 overflow-y-auto p-6 space-y-6">
+        <!-- RIGHT: TABBED CONTROL AND EDITING COLUMN -->
+        <div id="right-panel" class="w-full lg:w-[42%] xl:w-[38%] border-t lg:border-t-0 lg:border-l border-slate-850 bg-slate-950/40 flex flex-col overflow-hidden">
+
+            <!-- Tab Bar -->
+            <div class="flex shrink-0 border-b border-slate-850 bg-slate-950/60 px-2">
+                <button class="tab-btn active" data-tab="layout" onclick="switchTab('layout')"><i class="fa-solid fa-vector-square mr-1.5"></i>Layout</button>
+                <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')"><i class="fa-solid fa-sliders mr-1.5"></i>Settings</button>
+                <button class="tab-btn" data-tab="prompt" onclick="switchTab('prompt')"><i class="fa-solid fa-code mr-1.5"></i>Prompt</button>
+            </div>
+
+            <!-- Tab Panels (scrollable) -->
+            <div class="flex-1 overflow-y-auto p-6">
+
+            <!-- ============================ LAYOUT TAB ============================ -->
+            <div id="tab-layout" class="tab-panel space-y-6">
 
             <!-- Card 2: Bounding Box Selection Manager -->
             <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
@@ -219,10 +251,149 @@
                 </div>
             </div>
 
-            <!-- Card 1: Canvas Settings & Preset Scenes -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box space-y-5">
-                
-                <!-- Aspect Ratios -->
+            <!-- Card 3: Selected Box Detail Editor (moved here in markup below) -->
+            <div id="selected-box-card" class="bg-slate-900 border border-slate-700 rounded-2xl p-5 ideogram-box scroll-mt-6">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="section-header">Selected Box</div>
+                    <button onclick="deleteSelectedBox()" id="delete-selected-btn"
+                            class="hidden text-xs px-2 py-1 text-red-400 hover:text-red-355 flex items-center gap-x-1 transition-colors">
+                        <i class="fa-solid fa-trash-can"></i> <span>Delete</span>
+                    </button>
+                </div>
+
+                <div id="no-selection" class="text-center py-4 text-slate-500 text-sm italic">
+                    Click a box on the canvas or in the active list above to edit its parameters.
+                </div>
+
+                <div id="box-editor" class="hidden space-y-3">
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Type</label>
+                            <select id="box-type" onchange="updateSelectedBox()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm">
+                                <option value="obj">Object / Subject (obj)</option>
+                                <option value="text">In-image Text (text)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">ID</label>
+                            <div id="box-id-display" class="font-mono text-xs bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-400 w-14 text-center"></div>
+                        </div>
+                    </div>
+
+                    <!-- BBox numbers -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Bounding Box (0–1000 normalized)</label>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div>
+                                <div class="text-[10px] text-slate-400">Y min</div>
+                                <input id="bbox-ymin" type="number" min="0" max="1000" step="1"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400">X min</div>
+                                <input id="bbox-xmin" type="number" min="0" max="1000" step="1"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400">Y max</div>
+                                <input id="bbox-ymax" type="number" min="0" max="1000" step="1"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400">X max</div>
+                                <input id="bbox-xmax" type="number" min="0" max="1000" step="1"
+                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="text-specific">
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Literal Text (exact string to render)</label>
+                        <input id="box-text" type="text" placeholder="SALE • 50% OFF"
+                               class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-lg p-2.5 text-sm"
+                               oninput="updateSelectedBox()">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Description / Visual styling</label>
+                        <textarea id="box-desc" rows="2" placeholder="Bold condensed sans-serif, deep red with slight texture..."
+                                  class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-3 text-sm resize-y"
+                                  oninput="updateSelectedBox()"></textarea>
+                    </div>
+
+                    <!-- Per-element color palette -->
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Element Color Palette (optional, up to 5)</label>
+                        <div id="element-palette-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[26px]"></div>
+                        <div class="flex gap-2">
+                            <input id="element-color-picker" type="color" value="#10b981" class="w-9 h-9 p-0 border border-slate-600 rounded-lg overflow-hidden cursor-pointer">
+                            <button onclick="addElementColor()"
+                                    class="flex-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg px-3 text-slate-300">+ Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scene Preset Examples -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
+                <div class="section-header mb-3">Load Demo Presets</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="loadExample('poster')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                        <div class="w-7 h-7 bg-purple-900/30 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-compact-disc text-purple-400 text-sm"></i>
+                        </div>
+                        <div class="leading-none">
+                            <div class="text-xs font-medium text-slate-200">Music Poster</div>
+                            <span class="text-[9px] text-slate-500 font-mono">1:1 Square</span>
+                        </div>
+                    </button>
+                    <button onclick="loadExample('scene')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                        <div class="w-7 h-7 bg-amber-900/30 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-house text-amber-400 text-sm"></i>
+                        </div>
+                        <div class="leading-none">
+                            <div class="text-xs font-medium text-slate-200">Cozy Room</div>
+                            <span class="text-[9px] text-slate-500 font-mono">16:9 Cinema</span>
+                        </div>
+                    </button>
+                    <button onclick="loadExample('logo')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                        <div class="w-7 h-7 bg-emerald-900/30 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-award text-emerald-400 text-sm"></i>
+                        </div>
+                        <div class="leading-none">
+                            <div class="text-xs font-medium text-slate-200">Wordmark Logo</div>
+                            <span class="text-[9px] text-slate-500 font-mono">1:1 Branding</span>
+                        </div>
+                    </button>
+                    <button onclick="loadExample('ad')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                        <div class="w-7 h-7 bg-sky-900/30 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-bullhorn text-sky-400 text-sm"></i>
+                        </div>
+                        <div class="leading-none">
+                            <div class="text-xs font-medium text-slate-200">Product Ad</div>
+                            <span class="text-[9px] text-slate-500 font-mono">4:3 Standard</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reference Image Upload -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="section-header">Composition Guide</div>
+                    <button onclick="clearRefImage()" class="text-[10px] px-2 py-0.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition-all">Clear</button>
+                </div>
+                <input type="file" id="ref-image-input" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border file:border-slate-800 file:text-xs file:bg-slate-950 file:text-slate-300 hover:file:bg-slate-900 file:cursor-pointer transition-all">
+                <p class="text-[10px] text-slate-500 mt-1.5">Load an image background to trace and layout bounding boxes perfectly.</p>
+            </div>
+
+            </div><!-- /tab-layout -->
+
+            <!-- ============================ SETTINGS TAB ============================ -->
+            <div id="tab-settings" class="tab-panel space-y-6 hidden">
+
+            <!-- Canvas Aspect Ratio -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
                 <div>
                     <div class="flex items-center justify-between mb-3">
                         <div class="section-header">Canvas Aspect Ratio</div>
@@ -275,142 +446,12 @@
                     </div>
                 </div>
 
-                <!-- Scene Preset Examples -->
-                <div class="border-t border-slate-800/80 pt-4">
-                    <div class="section-header mb-3">Load Demo Presets</div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="loadExample('poster')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
-                            <div class="w-7 h-7 bg-purple-900/30 rounded-lg flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-compact-disc text-purple-400 text-sm"></i>
-                            </div>
-                            <div class="leading-none">
-                                <div class="text-xs font-medium text-slate-200">Music Poster</div>
-                                <span class="text-[9px] text-slate-500 font-mono">1:1 Square</span>
-                            </div>
-                        </button>
-                        <button onclick="loadExample('scene')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
-                            <div class="w-7 h-7 bg-amber-900/30 rounded-lg flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-house text-amber-400 text-sm"></i>
-                            </div>
-                            <div class="leading-none">
-                                <div class="text-xs font-medium text-slate-200">Cozy Room</div>
-                                <span class="text-[9px] text-slate-500 font-mono">16:9 Cinema</span>
-                            </div>
-                        </button>
-                        <button onclick="loadExample('logo')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
-                            <div class="w-7 h-7 bg-emerald-900/30 rounded-lg flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-award text-emerald-400 text-sm"></i>
-                            </div>
-                            <div class="leading-none">
-                                <div class="text-xs font-medium text-slate-200">Wordmark Logo</div>
-                                <span class="text-[9px] text-slate-500 font-mono">1:1 Branding</span>
-                            </div>
-                        </button>
-                        <button onclick="loadExample('ad')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
-                            <div class="w-7 h-7 bg-sky-900/30 rounded-lg flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-bullhorn text-sky-400 text-sm"></i>
-                            </div>
-                            <div class="leading-none">
-                                <div class="text-xs font-medium text-slate-200">Product Ad</div>
-                                <span class="text-[9px] text-slate-500 font-mono">4:3 Standard</span>
-                            </div>
-                        </button>
-                    </div>
-                </div>
+            </div><!-- /aspect card -->
 
-                <!-- Reference Image Upload -->
-                <div class="border-t border-slate-800/80 pt-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="section-header">Composition Guide</div>
-                        <button onclick="clearRefImage()" class="text-[10px] px-2 py-0.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition-all">Clear</button>
-                    </div>
-                    <input type="file" id="ref-image-input" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border file:border-slate-800 file:text-xs file:bg-slate-950 file:text-slate-300 hover:file:bg-slate-900 file:cursor-pointer transition-all">
-                    <p class="text-[10px] text-slate-500 mt-1.5">Load an image background to trace and layout bounding boxes perfectly.</p>
-                </div>
-            </div>
+            </div><!-- /tab-settings -->
 
-            <!-- Card 3: Selected Box Detail Editor -->
-            <div id="selected-box-card" class="bg-slate-900 border border-slate-700 rounded-2xl p-5 ideogram-box scroll-mt-6">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="section-header">Selected Box</div>
-                    <button onclick="deleteSelectedBox()" id="delete-selected-btn"
-                            class="hidden text-xs px-2 py-1 text-red-400 hover:text-red-355 flex items-center gap-x-1 transition-colors">
-                        <i class="fa-solid fa-trash-can"></i> <span>Delete</span>
-                    </button>
-                </div>
-                
-                <div id="no-selection" class="text-center py-4 text-slate-500 text-sm italic">
-                    Click a box on the canvas or in the active list above to edit its parameters.
-                </div>
-                
-                <div id="box-editor" class="hidden space-y-3">
-                    <div class="flex gap-2">
-                        <div class="flex-1">
-                            <label class="block text-xs font-medium text-slate-300 mb-1">Type</label>
-                            <select id="box-type" onchange="updateSelectedBox()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm">
-                                <option value="obj">Object / Subject (obj)</option>
-                                <option value="text">In-image Text (text)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300 mb-1">ID</label>
-                            <div id="box-id-display" class="font-mono text-xs bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-400 w-14 text-center"></div>
-                        </div>
-                    </div>
-
-                    <!-- BBox numbers -->
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Bounding Box (0–1000 normalized)</label>
-                        <div class="grid grid-cols-4 gap-2">
-                            <div>
-                                <div class="text-[10px] text-slate-400">Y min</div>
-                                <input id="bbox-ymin" type="number" min="0" max="1000" step="1" 
-                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
-                            </div>
-                            <div>
-                                <div class="text-[10px] text-slate-400">X min</div>
-                                <input id="bbox-xmin" type="number" min="0" max="1000" step="1" 
-                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
-                            </div>
-                            <div>
-                                <div class="text-[10px] text-slate-400">Y max</div>
-                                <input id="bbox-ymax" type="number" min="0" max="1000" step="1" 
-                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
-                            </div>
-                            <div>
-                                <div class="text-[10px] text-slate-400">X max</div>
-                                <input id="bbox-xmax" type="number" min="0" max="1000" step="1" 
-                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="text-specific">
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Literal Text (exact string to render)</label>
-                        <input id="box-text" type="text" placeholder="SALE • 50% OFF" 
-                               class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-lg p-2.5 text-sm"
-                               oninput="updateSelectedBox()">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Description / Visual styling</label>
-                        <textarea id="box-desc" rows="2" placeholder="Bold condensed sans-serif, deep red with slight texture..."
-                                  class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-3 text-sm resize-y"
-                                  oninput="updateSelectedBox()"></textarea>
-                    </div>
-
-                    <!-- Per-element color palette -->
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Element Color Palette (optional, up to 5)</label>
-                        <div id="element-palette-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[26px]"></div>
-                        <div class="flex gap-2">
-                            <input id="element-color-picker" type="color" value="#10b981" class="w-9 h-9 p-0 border border-slate-600 rounded-lg overflow-hidden cursor-pointer">
-                            <button onclick="addElementColor()" 
-                                    class="flex-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg px-3 text-slate-300">+ Add</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- ============================ PROMPT TAB ============================ -->
+            <div id="tab-prompt" class="tab-panel space-y-6 hidden">
 
             <!-- Card 4: Global Prompt Setup -->
             <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 ideogram-box">
@@ -547,6 +588,10 @@
                     <span>Compact format minimizes spaces to align with the training data distribution format.</span>
                 </div>
             </div>
+
+            </div><!-- /tab-prompt -->
+
+            </div><!-- /tab panels -->
         </div>
     </div>
 
@@ -575,6 +620,16 @@
             updateTimeout = setTimeout(() => {
                 updateJSONOutput();
             }, 180);
+        }
+
+        // Right panel tab switching
+        function switchTab(name) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            const panel = document.getElementById('tab-' + name);
+            if (panel) panel.classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.tab === name);
+            });
         }
 
         function updateBoxCount() {
@@ -1047,6 +1102,9 @@
             
             // Render element palette chips
             renderElementPaletteChips(box);
+
+            // The Selected Box editor lives in the Layout tab — make sure it's visible
+            switchTab('layout');
 
             // Automatically scroll right-hand editor card into viewport
             const rightPanel = document.getElementById('right-panel');
