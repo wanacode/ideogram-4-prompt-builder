@@ -229,6 +229,7 @@
             <div class="flex shrink-0 border-b border-slate-850 bg-slate-950/60 px-2">
                 <button class="tab-btn active" data-tab="layout" onclick="switchTab('layout')"><i class="fa-solid fa-vector-square mr-1.5"></i>Layout</button>
                 <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')"><i class="fa-solid fa-sliders mr-1.5"></i>Settings</button>
+                <button class="tab-btn" data-tab="presets" onclick="switchTab('presets')"><i class="fa-solid fa-shapes mr-1.5"></i>Presets</button>
                 <button class="tab-btn" data-tab="prompt" onclick="switchTab('prompt')"><i class="fa-solid fa-code mr-1.5"></i>Prompt</button>
             </div>
 
@@ -340,49 +341,6 @@
                 </div>
             </div>
 
-            <!-- Scene Preset Examples -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
-                <div class="section-header mb-3">Load Demo Presets</div>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="loadExample('poster')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
-                        <div class="w-7 h-7 bg-purple-900/30 rounded-lg flex items-center justify-center shrink-0">
-                            <i class="fa-solid fa-compact-disc text-purple-400 text-sm"></i>
-                        </div>
-                        <div class="leading-none">
-                            <div class="text-xs font-medium text-slate-200">Music Poster</div>
-                            <span class="text-[9px] text-slate-500 font-mono">1:1 Square</span>
-                        </div>
-                    </button>
-                    <button onclick="loadExample('scene')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
-                        <div class="w-7 h-7 bg-amber-900/30 rounded-lg flex items-center justify-center shrink-0">
-                            <i class="fa-solid fa-house text-amber-400 text-sm"></i>
-                        </div>
-                        <div class="leading-none">
-                            <div class="text-xs font-medium text-slate-200">Cozy Room</div>
-                            <span class="text-[9px] text-slate-500 font-mono">16:9 Cinema</span>
-                        </div>
-                    </button>
-                    <button onclick="loadExample('logo')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
-                        <div class="w-7 h-7 bg-emerald-900/30 rounded-lg flex items-center justify-center shrink-0">
-                            <i class="fa-solid fa-award text-emerald-400 text-sm"></i>
-                        </div>
-                        <div class="leading-none">
-                            <div class="text-xs font-medium text-slate-200">Wordmark Logo</div>
-                            <span class="text-[9px] text-slate-500 font-mono">1:1 Branding</span>
-                        </div>
-                    </button>
-                    <button onclick="loadExample('ad')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
-                        <div class="w-7 h-7 bg-sky-900/30 rounded-lg flex items-center justify-center shrink-0">
-                            <i class="fa-solid fa-bullhorn text-sky-400 text-sm"></i>
-                        </div>
-                        <div class="leading-none">
-                            <div class="text-xs font-medium text-slate-200">Product Ad</div>
-                            <span class="text-[9px] text-slate-500 font-mono">4:3 Standard</span>
-                        </div>
-                    </button>
-                </div>
-            </div>
-
             <!-- Reference Image Upload -->
             <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
                 <div class="flex items-center justify-between mb-2">
@@ -455,6 +413,54 @@
             </div><!-- /aspect card -->
 
             </div><!-- /tab-settings -->
+
+            <!-- ============================ PRESETS TAB ============================ -->
+            <div id="tab-presets" class="tab-panel space-y-6 hidden">
+
+            <!-- Scene Preset Examples -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
+                <div class="section-header mb-3">Load Demo Presets</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="loadExample('poster')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                        <div class="w-7 h-7 bg-purple-900/30 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-compact-disc text-purple-400 text-sm"></i>
+                        </div>
+                        <div class="leading-none">
+                            <div class="text-xs font-medium text-slate-200">Music Poster</div>
+                            <span class="text-[9px] text-slate-500 font-mono">1:1 Square</span>
+                        </div>
+                    </button>
+                    <button onclick="loadExample('scene')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                        <div class="w-7 h-7 bg-amber-900/30 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-house text-amber-400 text-sm"></i>
+                        </div>
+                        <div class="leading-none">
+                            <div class="text-xs font-medium text-slate-200">Cozy Room</div>
+                            <span class="text-[9px] text-slate-500 font-mono">16:9 Cinema</span>
+                        </div>
+                    </button>
+                    <button onclick="loadExample('logo')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                        <div class="w-7 h-7 bg-emerald-900/30 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-award text-emerald-400 text-sm"></i>
+                        </div>
+                        <div class="leading-none">
+                            <div class="text-xs font-medium text-slate-200">Wordmark Logo</div>
+                            <span class="text-[9px] text-slate-500 font-mono">1:1 Branding</span>
+                        </div>
+                    </button>
+                    <button onclick="loadExample('ad')" class="p-2.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 rounded-xl flex items-center gap-2 text-left transition-all hover:border-slate-700">
+                        <div class="w-7 h-7 bg-sky-900/30 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-bullhorn text-sky-400 text-sm"></i>
+                        </div>
+                        <div class="leading-none">
+                            <div class="text-xs font-medium text-slate-200">Product Ad</div>
+                            <span class="text-[9px] text-slate-500 font-mono">4:3 Standard</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            </div><!-- /tab-presets -->
 
             <!-- ============================ PROMPT TAB ============================ -->
             <div id="tab-prompt" class="tab-panel space-y-6 hidden">
@@ -899,7 +905,7 @@
                         id: ++boxCounter,
                         type: 'obj',
                         bbox: [y1, x1, y2, x2],
-                        desc: 'A prominent object in the scene',
+                        desc: '',
                         text: '',
                         color_palette: []
                     };
@@ -1208,7 +1214,7 @@
                 id: ++boxCounter,
                 type: 'obj',
                 bbox: [cy - bh/2, cx - bw/2, cy + bh/2, cx + bw/2],
-                desc: 'Main subject or element',
+                desc: '',
                 text: '',
                 color_palette: []
             };
