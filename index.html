@@ -334,7 +334,10 @@
                         <label class="block text-xs font-medium text-slate-300 mb-1.5">Element Color Palette (optional, up to 5)</label>
                         <div id="element-palette-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[26px]"></div>
                         <div class="flex gap-2">
-                            <input id="element-color-picker" type="color" value="#10b981" class="w-9 h-9 p-0 border border-slate-600 rounded-lg overflow-hidden cursor-pointer">
+                            <input id="element-color-picker" type="color" value="#10b981" class="w-9 h-9 p-0 border border-slate-600 rounded-lg overflow-hidden cursor-pointer shrink-0" oninput="syncElementHexFromPicker()">
+                            <input id="element-color-hex" type="text" value="#10B981" maxlength="7" placeholder="#RRGGBB"
+                                   class="w-24 bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg px-2 text-sm font-mono uppercase placeholder:normal-case"
+                                   oninput="syncElementPickerFromHex()" onkeydown="if(event.key==='Enter'){event.preventDefault();addElementColor();}">
                             <button onclick="addElementColor()"
                                     class="flex-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg px-3 text-slate-300">+ Add</button>
                         </div>
@@ -544,9 +547,11 @@
                         </div>
                         <div class="mt-2">
                             <label class="block text-xs font-medium text-slate-300 mb-1">Medium</label>
-                            <input id="photo-medium" type="text" value="photograph" 
-                                   class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-2.5 text-sm"
-                                   oninput="debouncedUpdateJSON()">
+                            <div id="photo-medium-options" class="grid grid-cols-3 gap-1.5"></div>
+                            <input id="photo-medium-custom" type="text" placeholder="Custom medium (e.g. cinema_still)"
+                                   class="hidden w-full mt-1.5 bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-2.5 text-sm"
+                                   oninput="onMediumCustomInput('photo')">
+                            <input id="photo-medium" type="hidden" value="photograph">
                         </div>
                     </div>
 
@@ -559,9 +564,11 @@
                         </div>
                         <div class="mt-2">
                             <label class="block text-xs font-medium text-slate-300 mb-1">Medium</label>
-                            <input id="art-medium" type="text" value="illustration" 
-                                   class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-2.5 text-sm"
-                                   oninput="debouncedUpdateJSON()">
+                            <div id="art-medium-options" class="grid grid-cols-3 gap-1.5"></div>
+                            <input id="art-medium-custom" type="text" placeholder="Custom medium (e.g. ui_design)"
+                                   class="hidden w-full mt-1.5 bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-2.5 text-sm"
+                                   oninput="onMediumCustomInput('art')">
+                            <input id="art-medium" type="hidden" value="illustration">
                         </div>
                     </div>
 
@@ -570,8 +577,11 @@
                         <label class="block text-xs font-medium text-slate-300 mb-1.5">Global Color Palette (up to 16 hex)</label>
                         <div id="global-palette-chips" class="flex flex-wrap gap-1.5 mb-2 min-h-[28px]"></div>
                         <div class="flex gap-2">
-                            <input id="global-color-picker" type="color" value="#3b82f6" class="w-9 h-9 p-0 border border-slate-600 rounded-lg overflow-hidden cursor-pointer">
-                            <button onclick="addGlobalColor()" 
+                            <input id="global-color-picker" type="color" value="#3b82f6" class="w-9 h-9 p-0 border border-slate-600 rounded-lg overflow-hidden cursor-pointer shrink-0" oninput="syncGlobalHexFromPicker()">
+                            <input id="global-color-hex" type="text" value="#3B82F6" maxlength="7" placeholder="#RRGGBB"
+                                   class="w-24 bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg px-2 text-sm font-mono uppercase placeholder:normal-case"
+                                   oninput="syncGlobalPickerFromHex()" onkeydown="if(event.key==='Enter'){event.preventDefault();addGlobalColor();}">
+                            <button onclick="addGlobalColor()"
                                     class="flex-1 text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg px-3 text-slate-300">+ Add color</button>
                         </div>
                     </div>
@@ -1307,9 +1317,31 @@
             });
         }
 
+        // Normalize a user-entered color into uppercase #RRGGBB, or null if invalid.
+        // Accepts an optional leading '#' and expands 3-digit shorthand.
+        function normalizeHex(value) {
+            if (!value) return null;
+            let v = String(value).trim().replace(/^#/, '');
+            if (/^[0-9a-fA-F]{3}$/.test(v)) v = v.split('').map(c => c + c).join('');
+            return /^[0-9a-fA-F]{6}$/.test(v) ? '#' + v.toUpperCase() : null;
+        }
+
+        function syncGlobalHexFromPicker() {
+            document.getElementById('global-color-hex').value =
+                document.getElementById('global-color-picker').value.toUpperCase();
+        }
+
+        function syncGlobalPickerFromHex() {
+            const hex = normalizeHex(document.getElementById('global-color-hex').value);
+            if (hex) document.getElementById('global-color-picker').value = hex;
+        }
+
         function addGlobalColor() {
-            const picker = document.getElementById('global-color-picker');
-            const hex = picker.value.toUpperCase();
+            const hexInput = document.getElementById('global-color-hex');
+            const hex = normalizeHex(hexInput.value) || normalizeHex(document.getElementById('global-color-picker').value);
+            if (!hex) return;
+            hexInput.value = hex;
+            document.getElementById('global-color-picker').value = hex;
             if (!globalColorPalette.includes(hex) && globalColorPalette.length < 16) {
                 globalColorPalette.push(hex);
                 renderGlobalPaletteChips();
@@ -1341,14 +1373,27 @@
             });
         }
 
+        function syncElementHexFromPicker() {
+            document.getElementById('element-color-hex').value =
+                document.getElementById('element-color-picker').value.toUpperCase();
+        }
+
+        function syncElementPickerFromHex() {
+            const hex = normalizeHex(document.getElementById('element-color-hex').value);
+            if (hex) document.getElementById('element-color-picker').value = hex;
+        }
+
         function addElementColor() {
             if (!selectedBoxId) return;
             const box = boxes.find(b => b.id === selectedBoxId);
             if (!box) return;
-            
-            const picker = document.getElementById('element-color-picker');
-            const hex = picker.value.toUpperCase();
-            
+
+            const hexInput = document.getElementById('element-color-hex');
+            const hex = normalizeHex(hexInput.value) || normalizeHex(document.getElementById('element-color-picker').value);
+            if (!hex) return;
+            hexInput.value = hex;
+            document.getElementById('element-color-picker').value = hex;
+
             if (!box.color_palette) box.color_palette = [];
             if (!box.color_palette.includes(hex) && box.color_palette.length < 5) {
                 box.color_palette.push(hex);
@@ -1365,6 +1410,80 @@
             box.color_palette.splice(index, 1);
             renderElementPaletteChips(box);
             debouncedUpdateJSON();
+        }
+
+        // ---- Medium selector (radio chips + custom free text) ----
+        const MEDIUM_OPTIONS = [
+            ['photograph', 'Photograph'],
+            ['illustration', 'Illustration'],
+            ['3d_render', '3D Render'],
+            ['painting', 'Painting'],
+            ['graphic_design', 'Graphic Design'],
+        ];
+
+        function renderMediumOptions(scope) {
+            const container = document.getElementById(scope + '-medium-options');
+            container.innerHTML = '';
+            MEDIUM_OPTIONS.concat([['__custom__', 'Custom']]).forEach(([value, label]) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.dataset.value = value;
+                btn.textContent = label;
+                btn.className = 'medium-opt px-2 py-1.5 text-xs font-medium border rounded-lg transition-all';
+                btn.onclick = () => onMediumClick(scope, value);
+                container.appendChild(btn);
+            });
+        }
+
+        function highlightMedium(scope, selected) {
+            document.querySelectorAll('#' + scope + '-medium-options .medium-opt').forEach(btn => {
+                const active = btn.dataset.value === selected;
+                btn.classList.toggle('bg-blue-600', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('border-blue-600', active);
+                btn.classList.toggle('bg-slate-800', !active);
+                btn.classList.toggle('hover:bg-slate-700', !active);
+                btn.classList.toggle('border-slate-700', !active);
+                btn.classList.toggle('text-slate-300', !active);
+            });
+        }
+
+        function onMediumClick(scope, value) {
+            const custom = document.getElementById(scope + '-medium-custom');
+            if (value === '__custom__') {
+                custom.classList.remove('hidden');
+                document.getElementById(scope + '-medium').value = custom.value.trim();
+                highlightMedium(scope, '__custom__');
+                custom.focus();
+            } else {
+                custom.classList.add('hidden');
+                document.getElementById(scope + '-medium').value = value;
+                highlightMedium(scope, value);
+            }
+            debouncedUpdateJSON();
+        }
+
+        function onMediumCustomInput(scope) {
+            document.getElementById(scope + '-medium').value =
+                document.getElementById(scope + '-medium-custom').value.trim();
+            debouncedUpdateJSON();
+        }
+
+        // Programmatic setter (used by init and demo presets); selects the matching
+        // preset chip, or falls back to the Custom field for any other value.
+        function setMedium(scope, value) {
+            const custom = document.getElementById(scope + '-medium-custom');
+            const isPreset = MEDIUM_OPTIONS.some(([v]) => v === value);
+            document.getElementById(scope + '-medium').value = value;
+            if (isPreset) {
+                custom.value = '';
+                custom.classList.add('hidden');
+                highlightMedium(scope, value);
+            } else {
+                custom.value = value;
+                custom.classList.remove('hidden');
+                highlightMedium(scope, '__custom__');
+            }
         }
 
         function setStyleMode(mode) {
@@ -1548,7 +1667,7 @@
                 document.getElementById('lighting').value = 'bright even studio light, slight riso offset registration';
                 setStyleMode('art');
                 document.getElementById('art-style').value = 'risograph print, bold condensed display typography';
-                document.getElementById('art-medium').value = 'graphic design print';
+                setMedium('art', 'graphic_design');
                 
                 globalColorPalette = ['#FF00AA', '#6B21A8', '#1E40AF', '#F59E0B'];
                 
@@ -1570,7 +1689,7 @@
                 document.getElementById('lighting').value = 'warm afternoon window light, soft elongated rectangle of light across the rug';
                 setStyleMode('art');
                 document.getElementById('art-style').value = 'soft contemporary illustration with clean confident linework, flat-but-warm color fills, light cel-shading';
-                document.getElementById('art-medium').value = 'illustration';
+                setMedium('art', 'illustration');
                 
                 globalColorPalette = ['#D4A017', '#F5F5DC', '#5C4033', '#6B8E23', '#87CEEB'];
                 
@@ -1592,7 +1711,7 @@
                 document.getElementById('lighting').value = 'soft even studio lighting, gentle shadow';
                 setStyleMode('art');
                 document.getElementById('art-style').value = 'clean bold sans-serif typography, generous negative space';
-                document.getElementById('art-medium').value = 'graphic design';
+                setMedium('art', 'graphic_design');
                 
                 globalColorPalette = ['#3C2F2F', '#D4A574', '#F5F5F5'];
                 
@@ -1612,7 +1731,7 @@
                 document.getElementById('lighting').value = 'soft studio lighting, gentle key light from upper left';
                 setStyleMode('photo');
                 document.getElementById('photo-details').value = '85mm lens, f/2.8, shallow depth of field, high-end commercial';
-                document.getElementById('photo-medium').value = 'photograph';
+                setMedium('photo', 'photograph');
                 
                 globalColorPalette = ['#F8FAFC', '#1E293B', '#0EA5E9'];
                 
@@ -1652,6 +1771,12 @@
         }
 
         function initializeUI() {
+            // Medium selectors (radio chips + custom)
+            renderMediumOptions('photo');
+            renderMediumOptions('art');
+            setMedium('photo', 'photograph');
+            setMedium('art', 'illustration');
+
             // Initial style mode
             setStyleMode('photo');
 
