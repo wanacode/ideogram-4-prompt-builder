@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ideogram 4 Prompt Builder</title>
-    <link rel="icon" type="image/png" href="brain-icon.png">
-    <link rel="apple-touch-icon" href="brain-icon.png">
+    <link rel="icon" type="image/png" href="brain-icon-stroke.png">
+    <link rel="apple-touch-icon" href="brain-icon-stroke.png">
     <link rel="stylesheet" href="./dist/output.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -473,20 +473,15 @@
                 <div class="space-y-4">
                     <!-- High level -->
                     <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="flex items-center gap-1.5 text-xs font-medium text-slate-300">
-                                High-level description
-                                <span class="relative group inline-flex">
-                                    <i class="fa-solid fa-circle-info text-slate-500 hover:text-slate-300 cursor-help text-[11px]"></i>
-                                    <span class="pointer-events-none absolute left-1/2 bottom-full mb-1.5 -translate-x-1/2 w-56 px-2.5 py-1.5 rounded-md bg-slate-950 border border-slate-700 text-[11px] font-normal leading-snug text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg">
-                                        A one- or two-sentence summary of the entire image. Strongly recommended in every prompt.
-                                    </span>
+                        <label class="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-1">
+                            High-level description
+                            <span class="relative group inline-flex">
+                                <i class="fa-solid fa-circle-info text-slate-500 hover:text-slate-300 cursor-help text-[11px]"></i>
+                                <span class="pointer-events-none absolute left-1/2 bottom-full mb-1.5 -translate-x-1/2 w-56 px-2.5 py-1.5 rounded-md bg-slate-950 border border-slate-700 text-[11px] font-normal leading-snug text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg">
+                                    A one- or two-sentence summary of the entire image. Strongly recommended in every prompt.
                                 </span>
-                            </label>
-                            <button onclick="suggestHighLevel()" class="text-[10px] px-2 py-0.5 bg-slate-700 hover:bg-slate-600 border border-slate-650 rounded-sm text-slate-300 flex items-center gap-1 transition-all">
-                                <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> <span>Suggest from boxes</span>
-                            </button>
-                        </div>
+                            </span>
+                        </label>
                         <textarea id="high-level" rows="2" placeholder="A clean minimalist poster for a tech conference..."
                                   class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-3 text-sm resize-y"
                                   oninput="debouncedUpdateJSON()"></textarea>
@@ -494,7 +489,15 @@
                     
                     <!-- Background -->
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Background / Environment</label>
+                        <label class="flex items-center gap-1.5 text-xs font-medium text-slate-300 mb-1">
+                            Background / Environment
+                            <span class="relative group inline-flex">
+                                <i class="fa-solid fa-circle-info text-slate-500 hover:text-slate-300 cursor-help text-[11px]"></i>
+                                <span class="pointer-events-none absolute left-1/2 bottom-full mb-1.5 -translate-x-1/2 w-64 px-2.5 py-1.5 rounded-md bg-slate-950 border border-slate-700 text-[11px] font-normal leading-snug text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg">
+                                    Describe only the scene behind your subjects — setting, surroundings, depth, and atmosphere (it can be out of focus). Required field. Put foreground subjects in layout boxes, not here.
+                                </span>
+                            </span>
+                        </label>
                         <textarea id="background" rows="2" placeholder="Solid deep navy background with subtle paper texture..."
                                   class="w-full bg-slate-950 border border-slate-700 focus:border-blue-500 rounded-lg p-3 text-sm resize-y"
                                   oninput="debouncedUpdateJSON()"></textarea>
@@ -1287,22 +1290,6 @@
             if (input) input.value = '';
         }
 
-        function suggestHighLevel() {
-            if (boxes.length === 0) {
-                alert('Add some bounding boxes first to generate a suggestion.');
-                return;
-            }
-            
-            const bg = document.getElementById('background').value.trim() || 'a suitable environment';
-            const elementDescs = boxes.map(b => b.desc || (b.text ? `text "${b.text}"` : 'an element')).slice(0, 5);
-            
-            let suggestion = `A composition featuring ${elementDescs.join(', ')} against ${bg.toLowerCase()}.`;
-            suggestion = suggestion.charAt(0).toUpperCase() + suggestion.slice(1);
-            
-            document.getElementById('high-level').value = suggestion;
-            debouncedUpdateJSON();
-        }
-
         // Palette helper functions
         function renderGlobalPaletteChips() {
             const container = document.getElementById('global-palette-chips');
@@ -1667,26 +1654,14 @@
         function initializeUI() {
             // Initial style mode
             setStyleMode('photo');
-            document.getElementById('photo-details').value = '35mm film still, shallow depth of field, natural grain';
-            document.getElementById('photo-medium').value = 'photograph';
-            
-            // Initial global palette example
-            globalColorPalette = ['#1E3A5F', '#D4A017'];
+
+            // Start empty — no global palette
+            globalColorPalette = [];
             renderGlobalPaletteChips();
-            
-            // Initial demo boxes (a simple living room scene)
-            boxes = [
-                { id: ++boxCounter, type: 'obj', bbox: [180, 220, 620, 780], desc: 'Young woman seated on a mustard yellow sofa reading a book', color_palette: [] },
-                { id: ++boxCounter, type: 'obj', bbox: [50, 650, 780, 980], desc: 'Tall window with soft daylight coming through', color_palette: [] },
-                { id: ++boxCounter, type: 'obj', bbox: [720, 120, 920, 380], desc: 'Sleeping tabby cat on the rug', color_palette: [] }
-            ];
-            
-            // Populate some defaults
-            document.getElementById('high-level').value = 'A soft contemporary illustration of a cozy late-afternoon living room with a young woman curled on a mustard sofa reading.';
-            document.getElementById('background').value = 'Warm off-white walls, woven jute rug, soft ambient daylight from the right window.';
-            document.getElementById('aesthetics').value = 'soft contemporary illustration, warm and inviting, clean linework';
-            document.getElementById('lighting').value = 'warm late-afternoon window light, soft elongated patch of sunlight';
-            
+
+            // Start with an empty canvas — no layout boxes, no descriptions
+            boxes = [];
+
             // Initialize ratio
             setAspectRatio(16, 9);
             
@@ -1699,7 +1674,7 @@
             renderBoxes();
             updateBoxCount();
             updateCurrentAspectDisplay();
-            selectBox(1); // select first box
+            selectBox(null); // nothing selected on an empty canvas
             
             updateJSONOutput();
             
