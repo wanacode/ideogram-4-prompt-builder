@@ -227,17 +227,17 @@
 
             <!-- Tab Bar -->
             <div class="flex shrink-0 border-b border-slate-850 bg-slate-950/60 px-2">
-                <button class="tab-btn active" data-tab="layout" onclick="switchTab('layout')"><i class="fa-solid fa-vector-square mr-1.5"></i>Layout</button>
+                <button class="tab-btn active" data-tab="prompt" onclick="switchTab('prompt')"><i class="fa-solid fa-code mr-1.5"></i>Prompt</button>
+                <button class="tab-btn" data-tab="layout" onclick="switchTab('layout')"><i class="fa-solid fa-vector-square mr-1.5"></i>Layout</button>
                 <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')"><i class="fa-solid fa-sliders mr-1.5"></i>Settings</button>
                 <button class="tab-btn" data-tab="presets" onclick="switchTab('presets')"><i class="fa-solid fa-shapes mr-1.5"></i>Presets</button>
-                <button class="tab-btn" data-tab="prompt" onclick="switchTab('prompt')"><i class="fa-solid fa-code mr-1.5"></i>Prompt</button>
             </div>
 
             <!-- Tab Panels (scrollable) -->
             <div class="flex-1 overflow-y-auto p-6">
 
             <!-- ============================ LAYOUT TAB ============================ -->
-            <div id="tab-layout" class="tab-panel space-y-6">
+            <div id="tab-layout" class="tab-panel space-y-6 hidden">
 
             <!-- Card 2: Bounding Box Selection Manager -->
             <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
@@ -341,16 +341,6 @@
                 </div>
             </div>
 
-            <!-- Reference Image Upload -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="section-header">Composition Guide</div>
-                    <button onclick="clearRefImage()" class="text-[10px] px-2 py-0.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition-all">Clear</button>
-                </div>
-                <input type="file" id="ref-image-input" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border file:border-slate-800 file:text-xs file:bg-slate-950 file:text-slate-300 hover:file:bg-slate-900 file:cursor-pointer transition-all">
-                <p class="text-[10px] text-slate-500 mt-1.5">Load an image background to trace and layout bounding boxes perfectly.</p>
-            </div>
-
             </div><!-- /tab-layout -->
 
             <!-- ============================ SETTINGS TAB ============================ -->
@@ -412,6 +402,16 @@
 
             </div><!-- /aspect card -->
 
+            <!-- Reference Image Upload -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="section-header">Composition Guide</div>
+                    <button onclick="clearRefImage()" class="text-[10px] px-2 py-0.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 rounded-lg text-slate-400 hover:text-slate-200 transition-all">Clear</button>
+                </div>
+                <input type="file" id="ref-image-input" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border file:border-slate-800 file:text-xs file:bg-slate-950 file:text-slate-300 hover:file:bg-slate-900 file:cursor-pointer transition-all">
+                <p class="text-[10px] text-slate-500 mt-1.5">Load an image background to trace and layout bounding boxes perfectly.</p>
+            </div>
+
             </div><!-- /tab-settings -->
 
             <!-- ============================ PRESETS TAB ============================ -->
@@ -463,7 +463,7 @@
             </div><!-- /tab-presets -->
 
             <!-- ============================ PROMPT TAB ============================ -->
-            <div id="tab-prompt" class="tab-panel space-y-6 hidden">
+            <div id="tab-prompt" class="tab-panel space-y-6">
 
             <!-- Card 4: Global Prompt Setup -->
             <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 ideogram-box">
@@ -576,8 +576,8 @@
                     <div class="flex items-center gap-x-1">
                         <!-- Format Toggles matching Python separators=(",", ":") specifications -->
                         <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 mr-2">
-                            <button id="format-pretty-btn" onclick="setJSONFormat(false)" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-600 text-white transition-colors">Pretty</button>
-                            <button id="format-mini-btn" onclick="setJSONFormat(true)" class="text-[10px] font-semibold px-2 py-0.5 rounded text-slate-400 hover:text-slate-200 transition-colors">Compact</button>
+                            <button id="format-pretty-btn" onclick="setJSONFormat(false)" class="text-[10px] font-semibold px-2 py-0.5 rounded text-slate-400 hover:text-slate-200 transition-colors">Pretty</button>
+                            <button id="format-mini-btn" onclick="setJSONFormat(true)" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-600 text-white transition-colors">Compact</button>
                         </div>
                         <button onclick="copyJSON()" 
                                 class="text-xs flex items-center gap-x-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-550 rounded-lg text-white transition-colors">
@@ -622,7 +622,7 @@
         let resizeCorner = null;  // 'tl', 'tr', 'bl', 'br'
         let globalColorPalette = [];
         let styleMode = 'photo';
-        let isMinifiedJSON = false;
+        let isMinifiedJSON = true;
 
         let boxCounter = 0;
 
