@@ -204,7 +204,20 @@
 
         <!-- RIGHT: SCROLLABLE CONTROL AND EDITING COLUMNS -->
         <div id="right-panel" class="w-full lg:w-[42%] xl:w-[38%] border-t lg:border-t-0 lg:border-l border-slate-850 bg-slate-950/40 overflow-y-auto p-6 space-y-6">
-            
+
+            <!-- Card 2: Bounding Box Selection Manager -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="section-header">Active Bounding Boxes <span id="box-count-list" class="text-slate-400 font-mono ml-1">(0)</span></div>
+                    <button onclick="clearAllBoxes()" class="text-xs text-red-400 hover:text-red-355 flex items-center gap-1 transition-colors">
+                        <i class="fa-solid fa-circle-xmark"></i> <span>Clear all</span>
+                    </button>
+                </div>
+                <div id="box-list" class="flex flex-wrap gap-1.5 min-h-[46px] p-2 bg-slate-950/60 rounded-xl border border-slate-850/60">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
             <!-- Card 1: Canvas Settings & Preset Scenes -->
             <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box space-y-5">
                 
@@ -292,19 +305,6 @@
                     </div>
                     <input type="file" id="ref-image-input" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border file:border-slate-800 file:text-xs file:bg-slate-950 file:text-slate-300 hover:file:bg-slate-900 file:cursor-pointer transition-all">
                     <p class="text-[10px] text-slate-500 mt-1.5">Load an image background to trace and layout bounding boxes perfectly.</p>
-                </div>
-            </div>
-
-            <!-- Card 2: Bounding Box Selection Manager -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 ideogram-box">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="section-header">Active Bounding Boxes <span id="box-count-list" class="text-slate-400 font-mono ml-1">(0)</span></div>
-                    <button onclick="clearAllBoxes()" class="text-xs text-red-400 hover:text-red-355 flex items-center gap-1 transition-colors">
-                        <i class="fa-solid fa-circle-xmark"></i> <span>Clear all</span>
-                    </button>
-                </div>
-                <div id="box-list" class="flex flex-wrap gap-1.5 min-h-[46px] p-2 bg-slate-950/60 rounded-xl border border-slate-850/60">
-                    <!-- Populated by JS -->
                 </div>
             </div>
 
