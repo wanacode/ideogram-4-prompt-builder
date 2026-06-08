@@ -269,10 +269,16 @@
                     <div class="flex gap-2">
                         <div class="flex-1">
                             <label class="block text-xs font-medium text-slate-300 mb-1">Type</label>
-                            <select id="box-type" onchange="updateSelectedBox()" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm">
-                                <option value="obj">Object / Subject (obj)</option>
-                                <option value="text">In-image Text (text)</option>
-                            </select>
+                            <div id="box-type-group" class="flex gap-2">
+                                <label class="flex-1 flex items-center gap-2 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm cursor-pointer hover:border-slate-600">
+                                    <input type="radio" name="box-type" value="obj" onchange="updateSelectedBox()" class="accent-blue-500">
+                                    <span>Object <span class="text-slate-500 font-mono text-[10px]">obj</span></span>
+                                </label>
+                                <label class="flex-1 flex items-center gap-2 bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm cursor-pointer hover:border-slate-600">
+                                    <input type="radio" name="box-type" value="text" onchange="updateSelectedBox()" class="accent-emerald-500">
+                                    <span>Text <span class="text-slate-500 font-mono text-[10px]">text</span></span>
+                                </label>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-slate-300 mb-1">ID</label>
@@ -280,8 +286,8 @@
                         </div>
                     </div>
 
-                    <!-- BBox numbers -->
-                    <div>
+                    <!-- BBox numbers (hidden; kept in DOM so canvas drag/resize stays in sync) -->
+                    <div class="hidden">
                         <label class="block text-xs font-medium text-slate-300 mb-1">Bounding Box (0–1000 normalized)</label>
                         <div class="grid grid-cols-4 gap-2">
                             <div>
@@ -603,6 +609,7 @@
         let currentAspectH = 9;
         let isDrawing = false;
         let drawStart = null;
+        let suppressCanvasClick = false;  // skip the next background-click deselect right after drawing a box
         let draggingBoxId = null;
         let dragStartNormalized = null;
         let resizingBoxId = null;
@@ -901,6 +908,9 @@
                     selectBox(newBox.id);
                     updateBoxCount();
                     updateJSONOutput();
+                    // The mouseup is followed by a native click on the empty boxes-layer,
+                    // which would otherwise trigger the background-click deselect below.
+                    suppressCanvasClick = true;
                 }
                 
                 if (tempBox) tempBox.remove();
@@ -1088,7 +1098,8 @@
             
             // Populate form
             document.getElementById('box-id-display').textContent = box.id;
-            document.getElementById('box-type').value = box.type;
+            const typeRadio = document.querySelector(`input[name="box-type"][value="${box.type}"]`);
+            if (typeRadio) typeRadio.checked = true;
             document.getElementById('bbox-ymin').value = box.bbox[0];
             document.getElementById('bbox-xmin').value = box.bbox[1];
             document.getElementById('bbox-ymax').value = box.bbox[2];
@@ -1129,7 +1140,8 @@
             const box = boxes.find(b => b.id === selectedBoxId);
             if (!box) return;
             
-            const type = document.getElementById('box-type').value;
+            const checkedType = document.querySelector('input[name="box-type"]:checked');
+            const type = checkedType ? checkedType.value : 'obj';
             const ymin = parseInt(document.getElementById('bbox-ymin').value) || 0;
             const xmin = parseInt(document.getElementById('bbox-xmin').value) || 0;
             const ymax = parseInt(document.getElementById('bbox-ymax').value) || 100;
@@ -1693,6 +1705,10 @@
             // Clear selections on background click
             const container = document.getElementById('canvas-container');
             container.addEventListener('click', function(e) {
+                if (suppressCanvasClick) {
+                    suppressCanvasClick = false;
+                    return;
+                }
                 if (e.target.id === 'canvas-container' || e.target.id === 'boxes-layer') {
                     selectedBoxId = null;
                     document.querySelectorAll('.bbox').forEach(el => el.classList.remove('selected'));
