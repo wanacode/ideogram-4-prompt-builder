@@ -227,7 +227,8 @@
 
             <!-- Tab Bar -->
             <div class="flex shrink-0 border-b border-slate-850 bg-slate-950/60 px-2">
-                <button class="tab-btn active" data-tab="prompt" onclick="switchTab('prompt')"><i class="fa-solid fa-code mr-1.5"></i>Prompt</button>
+                <button class="tab-btn active" data-tab="prompt" onclick="switchTab('prompt')"><i class="fa-solid fa-pen-nib mr-1.5"></i>Prompt</button>
+                <button class="tab-btn" data-tab="json" onclick="switchTab('json')"><i class="fa-solid fa-file-code mr-1.5"></i>JSON</button>
                 <button class="tab-btn" data-tab="layout" onclick="switchTab('layout')"><i class="fa-solid fa-vector-square mr-1.5"></i>Layout</button>
                 <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')"><i class="fa-solid fa-sliders mr-1.5"></i>Settings</button>
                 <button class="tab-btn" data-tab="presets" onclick="switchTab('presets')"><i class="fa-solid fa-shapes mr-1.5"></i>Presets</button>
@@ -566,11 +567,16 @@
                 </div>
             </div>
 
+            </div><!-- /tab-prompt -->
+
+            <!-- ============================ JSON TAB ============================ -->
+            <div id="tab-json" class="tab-panel space-y-6 hidden">
+
             <!-- Card 6: Live JSON Output -->
             <div class="bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden ideogram-box">
                 <div class="px-5 pt-4 pb-2 flex items-center justify-between border-b border-slate-700 bg-slate-950/60">
                     <div class="font-medium text-sm flex items-center gap-x-2">
-                        <i class="fa-solid fa-code text-blue-400"></i> 
+                        <i class="fa-solid fa-code text-blue-400"></i>
                         <span>Generated JSON Prompt</span>
                     </div>
                     <div class="flex items-center gap-x-1">
@@ -579,12 +585,12 @@
                             <button id="format-pretty-btn" onclick="setJSONFormat(false)" class="text-[10px] font-semibold px-2 py-0.5 rounded text-slate-400 hover:text-slate-200 transition-colors">Pretty</button>
                             <button id="format-mini-btn" onclick="setJSONFormat(true)" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-600 text-white transition-colors">Compact</button>
                         </div>
-                        <button onclick="copyJSON()" 
+                        <button onclick="copyJSON()"
                                 class="text-xs flex items-center gap-x-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-550 rounded-lg text-white transition-colors">
                             <i class="fa-solid fa-copy"></i>
                             <span class="hidden sm:inline">Copy</span>
                         </button>
-                        <button onclick="downloadJSON()" 
+                        <button onclick="downloadJSON()"
                                 class="text-xs flex items-center gap-x-1.5 px-2.5 py-1 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">
                             <i class="fa-solid fa-download"></i>
                             <span class="hidden sm:inline">Download</span>
@@ -601,7 +607,7 @@
                 </div>
             </div>
 
-            </div><!-- /tab-prompt -->
+            </div><!-- /tab-json -->
 
             </div><!-- /tab panels -->
         </div>
