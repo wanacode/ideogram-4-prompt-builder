@@ -6,7 +6,7 @@
     <title>Ideogram 4 Prompt Builder</title>
     <link rel="icon" type="image/png" href="brain-icon.png">
     <link rel="apple-touch-icon" href="brain-icon.png">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./dist/output.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
@@ -295,22 +295,22 @@
                             <div>
                                 <div class="text-[10px] text-slate-400">Y min</div>
                                 <input id="bbox-ymin" type="number" min="0" max="1000" step="1"
-                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-sm p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
                             </div>
                             <div>
                                 <div class="text-[10px] text-slate-400">X min</div>
                                 <input id="bbox-xmin" type="number" min="0" max="1000" step="1"
-                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-sm p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
                             </div>
                             <div>
                                 <div class="text-[10px] text-slate-400">Y max</div>
                                 <input id="bbox-ymax" type="number" min="0" max="1000" step="1"
-                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-sm p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
                             </div>
                             <div>
                                 <div class="text-[10px] text-slate-400">X max</div>
                                 <input id="bbox-xmax" type="number" min="0" max="1000" step="1"
-                                       class="w-full bg-slate-950 border border-slate-700 rounded p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
+                                       class="w-full bg-slate-950 border border-slate-700 rounded-sm p-1.5 text-sm font-mono" oninput="updateSelectedBox()">
                             </div>
                         </div>
                     </div>
@@ -352,7 +352,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-3">
                         <div class="section-header">Canvas Aspect Ratio</div>
-                        <div id="current-aspect-display" class="text-xs font-mono bg-slate-950 px-2.5 py-0.5 rounded border border-slate-850 text-blue-400">
+                        <div id="current-aspect-display" class="text-xs font-mono bg-slate-950 px-2.5 py-0.5 rounded-sm border border-slate-850 text-blue-400">
                             16:9 • 1024×576
                         </div>
                     </div>
@@ -474,8 +474,16 @@
                     <!-- High level -->
                     <div>
                         <div class="flex items-center justify-between mb-1">
-                            <label class="block text-xs font-medium text-slate-300">High-level description</label>
-                            <button onclick="suggestHighLevel()" class="text-[10px] px-2 py-0.5 bg-slate-700 hover:bg-slate-600 border border-slate-650 rounded text-slate-300 flex items-center gap-1 transition-all">
+                            <label class="flex items-center gap-1.5 text-xs font-medium text-slate-300">
+                                High-level description
+                                <span class="relative group inline-flex">
+                                    <i class="fa-solid fa-circle-info text-slate-500 hover:text-slate-300 cursor-help text-[11px]"></i>
+                                    <span class="pointer-events-none absolute left-1/2 bottom-full mb-1.5 -translate-x-1/2 w-56 px-2.5 py-1.5 rounded-md bg-slate-950 border border-slate-700 text-[11px] font-normal leading-snug text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-lg">
+                                        A one- or two-sentence summary of the entire image. Strongly recommended in every prompt.
+                                    </span>
+                                </span>
+                            </label>
+                            <button onclick="suggestHighLevel()" class="text-[10px] px-2 py-0.5 bg-slate-700 hover:bg-slate-600 border border-slate-650 rounded-sm text-slate-300 flex items-center gap-1 transition-all">
                                 <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> <span>Suggest from boxes</span>
                             </button>
                         </div>
@@ -582,8 +590,8 @@
                     <div class="flex items-center gap-x-1">
                         <!-- Format Toggles matching Python separators=(",", ":") specifications -->
                         <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg p-0.5 mr-2">
-                            <button id="format-pretty-btn" onclick="setJSONFormat(false)" class="text-[10px] font-semibold px-2 py-0.5 rounded text-slate-400 hover:text-slate-200 transition-colors">Pretty</button>
-                            <button id="format-mini-btn" onclick="setJSONFormat(true)" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-600 text-white transition-colors">Compact</button>
+                            <button id="format-pretty-btn" onclick="setJSONFormat(false)" class="text-[10px] font-semibold px-2 py-0.5 rounded-sm text-slate-400 hover:text-slate-200 transition-colors">Pretty</button>
+                            <button id="format-mini-btn" onclick="setJSONFormat(true)" class="text-[10px] font-semibold px-2 py-0.5 rounded-sm bg-blue-600 text-white transition-colors">Compact</button>
                         </div>
                         <button onclick="copyJSON()"
                                 class="text-xs flex items-center gap-x-1.5 px-2.5 py-1 bg-blue-600 hover:bg-blue-550 rounded-lg text-white transition-colors">
@@ -1304,7 +1312,7 @@
                 const chip = document.createElement('div');
                 chip.className = `flex items-center gap-x-1 px-1.5 py-0.5 text-xs rounded-full border border-slate-650 bg-slate-800`;
                 chip.innerHTML = `
-                    <div class="w-3.5 h-3.5 rounded" style="background-color: ${color}"></div>
+                    <div class="w-3.5 h-3.5 rounded-sm" style="background-color: ${color}"></div>
                     <span class="font-mono text-[10px] text-slate-300">${color}</span>
                     <button class="ml-0.5 text-red-400 hover:text-red-300 leading-none" onclick="removeGlobalColor(${index}); event.stopImmediatePropagation();">×</button>
                 `;
@@ -1338,7 +1346,7 @@
                 const chip = document.createElement('div');
                 chip.className = `flex items-center gap-x-1 px-1.5 py-0.5 text-xs rounded-full border border-emerald-700 bg-emerald-900/30`;
                 chip.innerHTML = `
-                    <div class="w-3.5 h-3.5 rounded" style="background-color: ${color}"></div>
+                    <div class="w-3.5 h-3.5 rounded-sm" style="background-color: ${color}"></div>
                     <span class="font-mono text-[10px] text-emerald-300">${color}</span>
                     <button class="ml-0.5 text-red-400 hover:text-red-300 leading-none" onclick="removeElementColor(${index}); event.stopImmediatePropagation();">×</button>
                 `;

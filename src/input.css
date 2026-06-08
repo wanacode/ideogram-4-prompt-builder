@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* Scan the static HTML (incl. utility classes inside JS template strings) */
+@source "../index.html";
+
+/* Custom slate shades used throughout the markup (border tones) */
+@theme {
+  --color-slate-650: #3e4a5d; /* between slate-600 #475569 and slate-700 #334155 */
+  --color-slate-850: #172032; /* between slate-800 #1e293b and slate-900 #0f172a */
+}

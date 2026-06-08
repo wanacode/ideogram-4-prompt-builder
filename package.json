@@ -1,0 +1,18 @@
+{
+  "name": "ideogram-4-prompt-builder",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Visual builder for Ideogram 4 structured JSON prompts.",
+  "scripts": {
+    "dev": "tailwindcss -i ./src/input.css -o ./dist/output.css --watch",
+    "build": "tailwindcss -i ./src/input.css -o ./dist/output.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.0",
+    "tailwindcss": "^4.3.0"
+  },
+  "packageManager": "pnpm@11.2.2",
+  "engines": {
+    "node": ">=20"
+  }
+}
