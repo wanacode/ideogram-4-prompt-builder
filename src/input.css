@@ -6,5 +6,40 @@
 /* Custom slate shades used throughout the markup (border tones) */
 @theme {
   --color-slate-650: #3e4a5d; /* between slate-600 #475569 and slate-700 #334155 */
+  --color-slate-750: #29333f; /* between slate-700 #334155 and slate-800 #1e293b */
   --color-slate-850: #172032; /* between slate-800 #1e293b and slate-900 #0f172a */
 }
+
+/*
+ * Light theme. The whole UI is built on the slate scale used semantically
+ * (high numbers = dark surfaces, low numbers = light text). Tailwind v4
+ * compiles every color utility to var(--color-slate-*), so overriding those
+ * variables under .light recolors the entire app with no markup changes.
+ * The ramp below is the reversed scale, tuned for contrast on white.
+ * Accent colors (blue/emerald/red) are intentionally left untouched.
+ */
+.light {
+  --color-slate-950: #ffffff; /* page / input backgrounds */
+  --color-slate-900: #f7f9fb; /* cards */
+  --color-slate-850: #eef2f7; /* header / faint dividers */
+  --color-slate-800: #e7ecf2; /* secondary button bg, subtle border */
+  --color-slate-750: #dde4ec;
+  --color-slate-700: #d7dee8; /* main border */
+  --color-slate-650: #cdd6e1;
+  --color-slate-600: #c4cdd9; /* stronger border */
+  --color-slate-500: #55606f; /* labels / stronger muted text */
+  --color-slate-400: #6f7c8e; /* muted text, icons */
+  --color-slate-300: #334155; /* label text */
+  --color-slate-200: #1e293b; /* body text */
+  --color-slate-100: #0f172a;
+  --color-slate-50:  #020617;
+}
+
+/* Light overrides for the few hardcoded colors in the inline <style> block.
+   Higher specificity (.light .x) so they win regardless of load order. */
+.light .tab-btn:hover { color: #334155; }
+.light .tab-btn.active { color: #0f172a; }
+
+.light ::-webkit-scrollbar-track { background: rgba(148, 163, 184, 0.12); }
+.light ::-webkit-scrollbar-thumb { background: rgba(71, 85, 105, 0.25); }
+.light ::-webkit-scrollbar-thumb:hover { background: rgba(71, 85, 105, 0.4); }

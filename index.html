@@ -7,6 +7,15 @@
     <link rel="icon" type="image/png" href="brain-icon-stroke.png">
     <link rel="apple-touch-icon" href="brain-icon-stroke.png">
     <link rel="stylesheet" href="./dist/output.css">
+    <script>
+        // Apply the saved/system theme before paint to avoid a flash.
+        (function () {
+            var saved = localStorage.getItem('theme');
+            var light = saved ? saved === 'light'
+                              : window.matchMedia('(prefers-color-scheme: light)').matches;
+            document.documentElement.classList.toggle('light', light);
+        })();
+    </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
@@ -196,7 +205,11 @@
                 <i class="fa-solid fa-code text-blue-400"></i>
                 <span class="hidden sm:inline">Outputs native Ideogram 4 structured JSON</span>
             </div>
-            <button onclick="showHelp()" 
+            <button onclick="toggleTheme()" aria-label="Toggle light/dark theme" title="Toggle theme"
+                    class="px-3 py-1.5 text-xs font-medium flex items-center bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg transition-all hover:text-white">
+                <i id="theme-icon" class="fa-solid fa-moon text-slate-400"></i>
+            </button>
+            <button onclick="showHelp()"
                     class="px-3 py-1.5 text-xs font-medium flex items-center gap-x-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg transition-all hover:text-white">
                 <i class="fa-solid fa-circle-question text-slate-400"></i>
                 <span>Help</span>
@@ -1412,6 +1425,28 @@
             debouncedUpdateJSON();
         }
 
+        // ---- Theme (dark/light) ----
+        function syncThemeIcon() {
+            const icon = document.getElementById('theme-icon');
+            if (!icon) return;
+            const isLight = document.documentElement.classList.contains('light');
+            icon.classList.toggle('fa-sun', isLight);
+            icon.classList.toggle('fa-moon', !isLight);
+        }
+
+        function toggleTheme() {
+            const isLight = document.documentElement.classList.toggle('light');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            syncThemeIcon();
+        }
+
+        // Follow OS changes only while the user hasn't made an explicit choice.
+        window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', (e) => {
+            if (localStorage.getItem('theme')) return;
+            document.documentElement.classList.toggle('light', e.matches);
+            syncThemeIcon();
+        });
+
         // ---- Medium selector (radio chips + custom free text) ----
         const MEDIUM_OPTIONS = [
             ['photograph', 'Photograph'],
@@ -1771,6 +1806,9 @@
         }
 
         function initializeUI() {
+            // Match the theme icon to the class the head script already applied
+            syncThemeIcon();
+
             // Medium selectors (radio chips + custom)
             renderMediumOptions('photo');
             renderMediumOptions('art');
